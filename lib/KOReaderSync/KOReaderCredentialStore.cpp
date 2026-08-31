@@ -5,10 +5,8 @@
 #include <ObfuscationUtils.h>
 
 namespace {
-// Default sync server URL. crosspoint-sync speaks the full KOSync protocol, so
-// pointing at any other kosync server (e.g. https://sync.koreader.rocks:443)
-// still works via the custom server URL setting.
-constexpr char DEFAULT_SERVER_URL[] = "https://sync.crosspointreader.com";
+// Default sync server URL points to standard KOSync server.
+constexpr char DEFAULT_SERVER_URL[] = "https://sync.koreader.rocks:443";
 
 // Default before config version 2. Configs saved without a version stamp and an
 // empty serverUrl were implicitly syncing here — they get pinned on upgrade.

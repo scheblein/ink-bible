@@ -2,7 +2,7 @@ name: Build & Publish SD Card Fonts
 
 # Fonts change rarely — run manually when font sources or the conversion
 # pipeline are updated.  Publishes .cpfont files + fonts.json manifest as
-# GitHub Release assets on the crosspoint-fonts repo so font releases don't
+# GitHub Release assets on the fonts repo so font releases don't
 # clutter the firmware releases page.
 #
 # Requires a repository secret FONTS_REPO_TOKEN — a fine-grained PAT (or
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  FONTS_REPO: crosspoint-reader/crosspoint-fonts
+  FONTS_REPO: scheblein/ink-bible-fonts
 
 jobs:
   build-fonts:
@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.14'
+          python-version: '3.13'
 
       - name: Install font tools
         run: pip install freetype-py fonttools pyyaml
@@ -81,11 +81,11 @@ jobs:
           gh release create "$VERSIONED" dist/* \
             --repo "${{ env.FONTS_REPO }}" \
             --title "$TITLE" \
-            --notes "Pre-built \`.cpfont\` font files for CrossPoint Reader.
+            --notes "Pre-built \`.cpfont\` font files for Ink Bible.
 
           Download individual files or use **Settings > System > Manage Fonts** on the device.
 
-          See [SD Card Fonts documentation](https://github.com/${{ github.repository }}/blob/main/docs/sd-card-fonts.md) for details."
+          See [SD Card Fonts documentation](https://github.com/${{ github.repository }}/blob/develop/docs/sd-card-fonts.md) for details."
 
       - name: Update stable tag for device downloads
         env:

@@ -1,6 +1,6 @@
 # Architecture Overview
 
-CrossPoint is firmware for the Xteink X4 (unaffiliated with Xteink), built with PlatformIO targeting the ESP32-C3 microcontroller.
+Ink Bible is open-source firmware for the Xteink X3 and X4, built with PlatformIO targeting the ESP32-C3 microcontroller.
 
 At a high level, it is firmware that uses an activity-driven application architecture loop with persistent settings/state, SD-card-first caching, and a rendering pipeline optimized for e-ink constraints.
 
@@ -17,7 +17,7 @@ graph TD
     E --> H[Home/Library/Settings flows]
     E --> I[Network/Web server flows]
     G --> J[lib/Epub parsing + layout + hyphenation]
-    J --> K[SD cache in .crosspoint]
+    J --> K[SD cache in .inkbible]
     E --> L[GfxRenderer]
     L --> M[E-ink display buffer]
 ```
@@ -142,7 +142,7 @@ Two singletons are central:
 Typical persisted areas on SD:
 
 ```text
-/.crosspoint/
+/.inkbible/
   epub_<hash>/
     book.bin
     css_rules.cache

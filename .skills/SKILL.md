@@ -873,13 +873,12 @@ build_flags =
 **Manual Cache Clear** (safe operations):
 ```bash
 # Delete ALL caches (forces full regeneration)
-rm -rf /path/to/sd/.crosspoint/
-
-# Delete specific book cache
-rm -rf /path/to/sd/.crosspoint/epub_<hash>/
+rm -rf /path/to/sd/.inkbible/
+rm -rf /path/to/sd/.inkbible/epub_<hash>/
+rm -rf /path/to/sd/.inkbible/epub_<hash>/sections/
 
 # Keep progress, delete only rendered sections
-rm -rf /path/to/sd/.crosspoint/epub_<hash>/sections/
+rm -rf /path/to/sd/.inkbible/epub_<hash>/sections/
 ```
 
 **When to Clear Cache**:
