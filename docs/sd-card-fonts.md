@@ -1,6 +1,6 @@
 # SD Card Fonts
 
-CrossPoint supports loading additional fonts from the SD card, including fonts
+Ink Bible supports loading additional fonts from the SD card, including fonts
 with extended Unicode coverage (CJK, Cyrillic, Greek, etc.).
 
 ## Installing Fonts
@@ -9,8 +9,8 @@ There are three ways to install fonts:
 
 ### Option 1: Download from device (recommended)
 
-1. Connect your CrossPoint reader to Wi-Fi
-2. Go to **Settings > System > Manage Fonts**
+1. Connect your Ink Bible reader to Wi-Fi
+2. Go to **Settings > Reader > Manage Fonts**
 3. Browse available font families and tap to download
 4. Downloaded fonts appear immediately in **Settings > Reader > Font Family**
 
@@ -23,8 +23,7 @@ There are three ways to install fonts:
 
 ### Option 3: Manual SD card copy
 
-1. Download font files from the
-   [crosspoint-fonts repository](https://github.com/crosspoint-reader/crosspoint-fonts)
+1. Download font files from font releases
 2. Copy font family folders to one of two locations on your SD card:
 
    - `/.fonts/` — hidden directory (preferred; keeps the SD root tidy
@@ -50,7 +49,7 @@ There are three ways to install fonts:
                ├── Merriweather_12.cpfont
                └── ...
 
-3. Insert the SD card and power on your CrossPoint reader
+3. Insert the SD card and power on your Ink Bible reader
 
 ## CJK in the User Interface
 
@@ -59,14 +58,14 @@ in the library, file names in the browser, list rows, headers) shows
 replacement boxes for Chinese/Japanese/Korean text even when book *content*
 renders correctly with a selected SD-card font.
 
-To avoid shipping a large CJK glyph set in flash, CrossPoint instead reuses the
+To avoid shipping a large CJK glyph set in flash, Ink Bible instead reuses the
 SD-card font you already selected: when a UI string contains a CJK character
 the built-in font cannot draw, that whole string is rendered with your selected
 SD-card font instead.
 
 The fallback is **size-matched**. The built-in UI fonts render at 8 pt
 (small/author lines), 10 pt (list rows) and 12 pt (book-cover titles, headers),
-so CrossPoint loads your SD family at those sizes too and maps each UI font to
+so Ink Bible loads your SD family at those sizes too and maps each UI font to
 its same-size SD font. CJK book names therefore appear at the same size as the
 Latin text around them. For this to work the family must contain `.cpfont`
 files at sizes **8, 10 and 12** (in addition to the reader sizes 12–18); any UI
@@ -149,6 +148,7 @@ To convert your own TrueType/OpenType fonts:
 | `greek` | Greek + Extended Greek |
 | `cyrillic` | Cyrillic + Supplement |
 | `hebrew` | Hebrew + Alphabetic Presentation Forms |
+| `arabic` | Arabic + Supplement + Extended-A + Presentation Forms A/B (RTL, contextual shaping) |
 | `georgian` | Georgian + Georgian Supplement |
 | `armenian` | Armenian |
 | `ethiopic` | Ethiopic + Extended |

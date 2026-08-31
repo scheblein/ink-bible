@@ -1,11 +1,12 @@
-# CrossPoint User Guide
+# Ink Bible User Guide
 
-Welcome to the **CrossPoint** firmware. This guide outlines the hardware controls, navigation, and reading features of the device.
+Welcome to the **Ink Bible** firmware. This guide outlines the hardware controls, navigation, and reading features of the device.
 
-- [CrossPoint User Guide](#crosspoint-user-guide)
+- [Ink Bible User Guide](#ink-bible-user-guide)
   - [1. Hardware Overview](#1-hardware-overview)
     - [Button Layout](#button-layout)
     - [Taking a Screenshot](#taking-a-screenshot)
+    - [Frontlight (X4 Pro only)](#frontlight-x4-pro-only)
   - [2. Power \& Startup](#2-power--startup)
     - [Power On / Off](#power-on--off)
     - [First Launch](#first-launch)
@@ -17,7 +18,7 @@ Welcome to the **CrossPoint** firmware. This guide outlines the hardware control
     - [3.5 File Transfer Screen](#35-file-transfer-screen)
     - [3.5.1 Calibre Wireless Transfers](#351-calibre-wireless-transfers)
       - [Installing the Plugin in Calibre](#installing-the-plugin-in-calibre)
-      - [Configuring the CrossPoint Plugin in Calibre](#configuring-the-crosspoint-plugin-in-calibre)
+      - [Configuring the Calibre Plugin](#configuring-the-calibre-plugin)
       - [Uploading Books](#uploading-books)
       - [Removing a Book](#removing-a-book)
     - [3.6 Settings](#36-settings)
@@ -28,9 +29,8 @@ Welcome to the **CrossPoint** firmware. This guide outlines the hardware control
       - [3.6.5 OPDS Servers (Multiple Libraries)](#365-opds-servers-multiple-libraries)
       - [3.6.6 Web Settings (Wi-Fi + OPDS)](#366-web-settings-wi-fi--opds)
       - [3.6.7 KOReader Sync Quick Setup](#367-koreader-sync-quick-setup)
-        - [Option A: CrossPoint Sync Server (`sync.crosspointreader.com`, default)](#option-a-crosspoint-sync-server-synccrosspointreadercom-default)
-        - [Option B: Legacy Public KOReader Server (`sync.koreader.rocks`)](#option-b-legacy-public-koreader-server-synckoreaderrocks)
-        - [Option C: Self-Hosted Server (Docker Compose)](#option-c-self-hosted-server-docker-compose)
+        - [Option A: Public KOReader Sync Server (`sync.koreader.rocks`, default)](#option-a-public-koreader-sync-server-synckoreaderrocks-default)
+        - [Option B: Self-Hosted Server (Docker Compose)](#option-b-self-hosted-server-docker-compose)
         - [Syncing While Reading](#syncing-while-reading)
     - [3.7 Sleep Screen](#37-sleep-screen)
       - [Cover settings](#cover-settings)
@@ -42,6 +42,7 @@ Welcome to the **CrossPoint** firmware. This guide outlines the hardware control
     - [Auto Page Turn](#auto-page-turn)
     - [Tilt Page Turn (X3 only)](#tilt-page-turn-x3-only)
     - [Footnote Navigation](#footnote-navigation)
+    - [Dictionary Lookup](#dictionary-lookup)
     - [System Navigation](#system-navigation)
     - [Supported Languages](#supported-languages)
   - [5. Reader Menu](#5-reader-menu)
@@ -59,15 +60,27 @@ The device utilises the standard buttons on the Xteink X4 (in the same layout as
 | Location        | Buttons                                              |
 | --------------- | ---------------------------------------------------- |
 | **Bottom Edge** | **Back**, **Confirm**, **Left**, **Right**           |
-| **Right Side**  | **Power**, **Volume Up**, **Volume Down**, **Reset** |
+| **Right Side**  | **Power**, **Side Up**, **Side Down**, **Reset** |
 
 Button layout can be customized in the **[Controls Settings](#363-controls)**.
 
 ### Taking a Screenshot
 
-When the Power Button and Volume Down button are pressed at the same time, it will take a screenshot and save it in the folder `screenshots/`.
+When the Power button and the lower side button (Side Down) are pressed at the same time, it will take a screenshot and save it in the folder `screenshots/`.
 
 Alternatively, while reading a book, press the **Confirm** button to open the reader menu and select **Take screenshot**.
+
+### Frontlight (X4 Pro only)
+
+The X4 Pro has a built-in frontlight with adjustable brightness and warmth. It is controlled from a swipe panel rather than the Settings menu:
+
+* **Open the frontlight panel:** Swipe down from the top edge of the screen, from almost any screen (Home, Browse Files, Reading Mode, etc.). Drag the brightness and warmth sliders to adjust the light live, or tap the sun icon to turn it on or off.
+* **Quick toggle:** Double-click the **Power** button to turn the frontlight on or off instantly, without opening the panel.
+
+> [!NOTE]
+> Frontlight brightness and warmth are intentionally not listed in **[Display Settings](#361-display)** — the swipe panel is the only place to adjust them. The on/off state can also be toggled with the Power-button double-click above.
+
+If the frontlight doesn't come back on after the device wakes from sleep, check **Restore Light on Wake** in **[Display Settings](#361-display)** (on by default). Turning it off is intentional if you'd rather have the light stay off on wake and switch it on yourself each time — but it's easy to forget you changed it.
 
 ---
 
@@ -103,7 +116,7 @@ See [Reading Mode](#4-reading-mode) below for more information.
 
 The Browse Files screen acts as a file and folder browser. The full path to the current directory is shown at the top of the screen. File extensions are displayed alongside each filename, and directories are shown with brackets (e.g. `[folder-name]`). Hidden directories (those beginning with `.`) are also visible.
 
-* **Navigate List:** Use **Left** (or **Volume Up**), or **Right** (or **Volume Down**) to move the selection cursor up and down through folders and books. You can also long-press these buttons to scroll a full page up or down.
+* **Navigate List:** Use **Left** (or **Side Up**), or **Right** (or **Side Down**) to move the selection cursor up and down through folders and books. You can also long-press these buttons to scroll a full page up or down.
 * **Open Selection:** Press **Confirm** to open a folder or start reading a selected book. Selecting a `.bmp` file will open the image viewer.
 * **Delete Files or Folders:** Hold and release **Confirm** to delete the selected file or folder. You will be given an option to either confirm or cancel. Multiple files can be selected for deletion in a single operation.
 * **Rename or Move:** Files can be renamed or moved to a different folder from within the browse screen.
@@ -131,21 +144,20 @@ A **Wi-Fi signal strength indicator** (dBm) is displayed on-screen during joined
 
 ### 3.5.1 Calibre Wireless Transfers
 
-CrossPoint supports sending books from Calibre using the CrossPoint Reader device plugin.
+Ink Bible supports sending books from Calibre using the device plugin.
 
 #### Installing the Plugin in Calibre
 
 If you don't already have the plugin installed:
 
-1. Head to https://github.com/crosspoint-reader/calibre-plugins/releases to download the latest version of the crosspoint_reader plugin.
-2. Download the zip file.
-3. Open Calibre → Preferences → Plugins → Load plugin from file → Select the zip file.
-4. Restart Calibre.
+1. Download the latest version of the plugin zip.
+2. Open Calibre → Preferences → Plugins → Load plugin from file → Select the zip file.
+3. Restart Calibre.
 
-#### Configuring the CrossPoint Plugin in Calibre
+#### Configuring the Calibre Plugin in Calibre
 1. In Calibre select Preferences.
 2. In the Preferences dialog select Plugins.
-3. In Plugins search for "crosspoint".
+3. In Plugins search for "inkbible" or the e-reader plugin.
 4. Click on "Customize plugin".
 5. Update the value for "Host" to match the IP for your device.
 6. Leave the other settings as they are.
@@ -156,14 +168,14 @@ If you don't already have the plugin installed:
 
 #### Uploading Books
 
-To upload a book using the CrossPoint plugin in Calibre:
+To upload a book using the plugin in Calibre:
 
 1. On the device: File Transfer -> Calibre Wireless, then join a network.
 2. Select one or more books.
 3. Right-click on that selection.
 4. Select "Send to Device" > "Send to main memory"
 
-The CrossPoint plugin will connect to your device, create a folder for the book's author in the root folder (or the folder you configured for the plugin), then copy the book into that folder.
+The plugin will connect to your device, create a folder for the book's author in the root folder (or the folder you configured for the plugin), then copy the book into that folder.
 
 <img width="783" height="310" alt="Image" src="https://github.com/user-attachments/assets/741b0909-2e1d-4f16-8af0-2c43fbda5ce6" />
 
@@ -179,14 +191,14 @@ The Settings screen allows you to configure the device's behavior. There are a f
 
 - **Sleep Screen**: Which sleep screen to display when the device sleeps:
   
-  - "Dark" (default) - The default dark Crosspoint logo sleep screen
+  - "Dark" (default) - The default dark Ink Bible logo sleep screen
   - "Light" - The same default sleep screen, on a white background
   - "Custom" - Custom images from the SD card; see [Sleep Screen](#37-sleep-screen) below for more information
   - "Cover" - The book cover image (Note: this is experimental and may not work as expected)
   - "None" - A blank screen
   - "Cover + Custom" - The book cover image while actively reading, falls back to "Custom" behavior otherwise
   - "Quick resume" - The text of the last page read will be displayed on the sleep screen and a moon icon is shown on the edge of the screen. Waking up the device will return to the same page of the opened book. This is useful for quickly resuming reading without waiting for the device to fully wake up and load the book.
-
+  - "Transparent" - A transparent overlay image drawn over the current screen; see [Sleep Screen](#37-sleep-screen) below for more information
 - **Sleep Screen Cover Mode**: How to display the book cover when "Cover" sleep screen is selected:
   
   - "Fit" (default) - Scale the image down to fit centered on the screen, padding with white borders as necessary
@@ -219,8 +231,8 @@ The Settings screen allows you to configure the device's behavior. There are a f
 
 - **UI Theme**: Set which UI theme to use:
   
-  - "Classic" - The original Crosspoint theme
-  - "Lyra" - The new theme for Crosspoint featuring rounded elements and menu icons
+  - "Classic" - The classic theme
+  - "Lyra" - A clean theme featuring rounded elements and menu icons
   - "Lyra Extended" - Lyra, but displays 3 books instead of 1 on the **[Home Screen](#31-home-screen)**
   - "RoundedRaff" - A rounded theme with additional visual styling
 
@@ -275,7 +287,7 @@ The Settings screen allows you to configure the device's behavior. There are a f
 
 - **Remap Front Buttons**: A menu for customising the function of each bottom edge button.
 
-- **Side Button Layout (reader)**: Swap the order of the up and down volume buttons from "Prev/Next" (default) to "Next/Prev". You can also disable them entirely. This change is only in effect when reading.
+- **Side Button Layout (reader)**: Swap the order of the up and down side buttons from "Prev/Next" (default) to "Next/Prev". You can also disable them entirely. This change is only in effect when reading.
 
 - **Long-press Chapter Skip**: Set whether long-pressing page turn buttons skips to the next/previous chapter:
   
@@ -307,93 +319,75 @@ The Settings screen allows you to configure the device's behavior. There are a f
 - **OPDS Servers**: Manage one or more OPDS [(Open Publication Distribution System)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System) libraries for browsing and downloading books. See [OPDS Servers (Multiple Libraries)](#365-opds-servers-multiple-libraries) below.
 
 - **Clear Reading Cache**: Clear the internal SD card cache.
-
-- **Check for updates**: Check for Crosspoint firmware updates over Wi-Fi. Firmware can also be updated without a USB connection by placing a `firmware.bin` file on the SD card.
-
-- **Language**: Set the UI language. CrossPoint supports 24 languages: English, Spanish, French, German, Czech, Brazilian Portuguese, Russian, Swedish, Romanian, Catalan, Ukrainian, Belarusian, Italian, Polish, Finnish, Danish, Dutch, Turkish, Kazakh, Hungarian, Lithuanian, Slovenian, Valencian, and Hebrew.
-
+ 
+- **Check for updates**: Check for Ink Bible firmware updates over Wi-Fi. Firmware can also be updated without a USB connection by placing a `firmware.bin` file on the SD card.
+ 
+- **Language**: Set the UI language. Ink Bible supports 32 languages: English, Spanish, French, German, Czech, Brazilian Portuguese, Russian, Swedish, Romanian, Catalan, Ukrainian, Belarusian, Italian, Polish, Finnish, Danish, Dutch, Turkish, Kazakh, Hungarian, Lithuanian, Slovenian, Valencian, Hebrew, and more.
+ 
 - **Manage Fonts**: Browse, download, and manage custom font families installed from the SD card. See [Custom Fonts (SD Card)](#38-custom-fonts-sd-card) for more information.
-
+ 
 #### 3.6.5 OPDS Servers (Multiple Libraries)
-
-CrossPoint supports saving multiple OPDS servers and switching between them when browsing catalogs.
-
+ 
+Ink Bible supports saving multiple OPDS servers and switching between them when browsing catalogs.
+ 
 1. Open **Settings -> System -> OPDS Servers**.
-
+ 
 2. Select **Add Server** to create a new entry, or select an existing server to edit it.
-
+ 
 3. Configure these fields:
-   
-   - **Server Name**: Optional display name (for example, "Home Calibre" or "Public Catalog").
-   
-   - **OPDS Server URL**: Full catalog root URL (for Calibre Content Server, usually ends with `/opds`).
-   
-   - **Username / Password**: Optional credentials for authenticated servers.
-
+    
+    - **Server Name**: Optional display name (for example, "Home Calibre" or "Public Catalog").
+    
+    - **OPDS Server URL**: Full catalog root URL (for Calibre Content Server, usually ends with `/opds`).
+    
+    - **Username / Password**: Optional credentials for authenticated servers.
+ 
 4. Use **Delete Server** inside a server entry to remove it.
-
+ 
 Behavior notes:
-
+ 
 - You can store up to 8 OPDS servers.
 - OPDS authentication supports HTTP Basic auth. If you use Calibre Content Server with authentication enabled, set it to Basic (not Digest).
-
+ 
 You can also manage OPDS servers from the web interface while in File Transfer mode:
-
+ 
 1. Connect to the device web UI.
-2. Open `http://<device-ip>/settings`.
+2. Open `http://<device-ip>/settings` or `http://inkbible.local/settings`.
 3. Use the **OPDS Servers** card to add, edit, or delete entries.
-
+ 
 For web-based Wi-Fi network management, see [Web Settings (Wi-Fi + OPDS)](#366-web-settings-wi-fi--opds).
-
+ 
 #### 3.6.6 Web Settings (Wi-Fi + OPDS)
-
+ 
 While in **File Transfer** mode, the web settings page includes management cards for both **Wi-Fi Networks** and **OPDS Servers**.
-
+ 
 1. On device: open **File Transfer** and connect through **Join a Network** or **Create Hotspot**.
-2. In a browser, open `http://<device-ip>/settings` or `http://crosspoint.local`.
+2. In a browser, open `http://<device-ip>/settings` or `http://inkbible.local/settings`.
 3. In **Wi-Fi Networks**, add, edit, or delete saved network entries (SSID + optional password).
 4. In **OPDS Servers**, add, edit, or delete OPDS catalogs.
-
+ 
 Behavior notes:
-
+ 
 - Passwords are never shown back in the web UI after saving.
 - Leaving Password blank while editing keeps the existing saved password unchanged.
 - The web UI can save hidden-network SSIDs, but connecting to hidden networks still depends on the device-side Wi-Fi connection flow.
-
+ 
 #### 3.6.7 KOReader Sync Quick Setup
-
-CrossPoint can sync reading progress with KOReader-compatible sync servers.
+ 
+Ink Bible can sync reading progress with KOReader-compatible sync servers.
 It also interoperates with KOReader apps/devices when they use the same server and credentials.
-
-##### Option A: CrossPoint Sync Server (`sync.crosspointreader.com`, default)
-
-When **Sync Server URL** is left empty, CrossPoint uses the free CrossPoint sync server at `https://sync.crosspointreader.com`. It speaks the standard KOReader sync protocol (so KOReader apps can use it too). CrossPoint records page starts as chapter-content offsets and sends the corresponding standard KOReader XPath, so devices with different fonts or layouts can return to the same text.
-
-1. On each CrossPoint device:
-
+ 
+##### Option A: Public KOReader Sync Server (`sync.koreader.rocks`, default)
+ 
+1. On each device:
+ 
    - Go to **Settings -> System -> KOReader Sync**.
-
-   - Set **Username** and **Password** (enter the plain password; CrossPoint computes MD5 internally, and use the same values on all devices).
-
-   - Leave **Sync Server URL** empty (or set it to `https://sync.crosspointreader.com`).
-
+ 
+   - Set **Sync Server URL** to `https://sync.koreader.rocks:443` (or leave empty for default).
+ 
+   - Set **Username** and **Password** (enter the plain password; Ink Bible computes MD5 internally, and use the same values on all devices).
+ 
    - On the first device, run **Sign Up** once to create the account directly from the device. On every other device, just run **Authenticate**.
-
-Accounts are per server. Existing `sync.koreader.rocks` credentials do not exist on the CrossPoint server; either sign up again with the same username/password or use Option B to keep using the legacy server.
-
-##### Option B: Legacy Public KOReader Server (`sync.koreader.rocks`)
-
-Use this if you already sync KOReader devices against the official public server.
-
-1. On each CrossPoint device:
-
-   - Go to **Settings -> System -> KOReader Sync**.
-
-   - Set **Sync Server URL** to `https://sync.koreader.rocks` (required; an empty URL now points at the CrossPoint server instead).
-
-   - Set **Username** and **Password** to your existing KOReader Sync credentials.
-
-   - Run **Authenticate**.
 
 2. If you do not have an account yet, run **Sign Up** on the device, or register once with curl:
 
@@ -496,11 +490,12 @@ The **Sleep Screen** setting controls what is displayed when the device goes to 
 
 | Mode               | Behavior                                                                                                                     |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Dark** (default) | The CrossPoint logo on a dark background.                                                                                    |
-| **Light**          | The CrossPoint logo on a white background.                                                                                   |
+| **Dark** (default) | The Ink Bible logo on a dark background.                                                                                     |
+| **Light**          | The Ink Bible logo on a white background.                                                                                    |
 | **Custom**         | A custom image from the SD card (see below). Falls back to **Dark** if no custom image is found.                             |
 | **Cover**          | The cover of the currently open book. Falls back to **Dark** if no book is open.                                             |
 | **Cover + Custom** | The cover of the currently open book, shown only while actively reading. Falls back to **Custom** behavior when not reading. |
+| **Transparent**    | A BMP or PNG overlay drawn over the current screen. Supports PNG and 32-bit BGRA alpha transparency, and treats white as transparent in regular BMPs. Falls back to **Dark** if no valid overlay image is found. |
 | **None**           | A blank screen.                                                                                                              |
 
 #### Cover settings
@@ -515,12 +510,21 @@ When using **Cover** or **Cover + Custom**, two additional settings apply:
 To use custom sleep images, set the sleep screen mode to **Custom** or **Cover + Custom**, then place images on the SD card:
 
 - **Multiple Images (recommended):** Create a `.sleep` directory in the root of the SD card and place any number of `.bmp` images inside. One will be randomly selected each time the device sleeps. (A directory named `sleep` is also accepted as a fallback.)
-- **Single Image:** Place a file named `sleep.bmp` in the root directory. This is used as a fallback if no valid images are found in the `.sleep`/`sleep` directory.
+- **Single Image:** Place a file named `sleep.bmp` in the root directory. This takes priority over the `.sleep`/`sleep` directories.
+
+#### Transparent overlay images
+
+To use transparent sleep overlays, set the sleep screen mode to **Transparent**, then place BMP or PNG files on the SD card:
+
+- **Multiple Images (recommended):** Create a `.sleep-overlay` directory in the root of the SD card and place any number of valid overlay `.bmp` or `.png` images inside. One will be randomly selected each time the device sleeps. A directory named `sleep-overlay` is also accepted as a fallback.
+- **Single Image:** Place `sleep-overlay.bmp` or `sleep-overlay.png` in the root directory. A root BMP takes priority over a root PNG, and both take priority over the `.sleep-overlay`/`sleep-overlay` directories.
+
+Transparent overlay files are intentionally separate from normal sleep images. Regular BMP formats supported by Ink Bible are accepted; white pixels leave the existing screen unchanged. For per-pixel alpha transparency, use a PNG with an alpha channel or a 32-bit BGRA BMP with both visible and non-opaque pixels. Opaque white pixels in alpha images erase the content behind them.
 
 > [!TIP]
 > For best results:
-> 
-> - Use uncompressed BMP files with 24-bit color depth
+> - For non-transparent **Custom** mode, use uncompressed BMP files with 24-bit color depth.
+> - For **Transparent** mode, use a PNG or uncompressed 32-bit BGRA BMP for per-pixel alpha, or a regular BMP for white-as-transparent artwork.
 > - X4: Use a resolution of 480x800 pixels to match the device's screen resolution.
 > - X3: Use a resolution of 528x792 pixels to match the device's screen resolution.
 
@@ -531,13 +535,13 @@ To use custom sleep images, set the sleep screen mode to **Custom** or **Cover +
 
 ### 3.8 Custom Fonts (SD Card)
 
-CrossPoint supports loading additional fonts from the SD card, extending beyond the two built-in families (Noto Serif, Noto Sans). Custom fonts can include extended Unicode coverage, enabling CJK (Chinese, Japanese, Korean) and other scripts.
+Ink Bible supports loading additional fonts from the SD card, extending beyond the two built-in families (Noto Serif, Noto Sans). Custom fonts can include extended Unicode coverage, enabling CJK (Chinese, Japanese, Korean) and other scripts.
 
 There are three ways to install fonts:
 
 1. **Download from device (recommended):** Go to **Settings -> System -> Manage Fonts**, browse the available font families, and select one to download over Wi-Fi.
 2. **Upload via web interface:** While in **File Transfer** mode, open the web UI in a browser and navigate to the **Fonts** tab to upload `.cpfont` files.
-3. **Manual SD card copy:** Download font files from the [crosspoint-fonts repository](https://github.com/crosspoint-reader/crosspoint-fonts) and copy them to `/.fonts/` (preferred) or `/fonts/` on your SD card.
+3. **Manual SD card copy:** Download font files from the font releases and copy them to `/.fonts/` (preferred) or `/fonts/` on your SD card.
 
 Once installed, custom fonts appear in **Settings → Reader → Font Family** alongside the built-in fonts.
 
@@ -553,17 +557,17 @@ Once you have opened a book, the button layout changes to facilitate reading.
 
 | Action            | Buttons                              |
 | ----------------- | ------------------------------------ |
-| **Previous Page** | Press **Left** _or_ **Volume Up**    |
-| **Next Page**     | Press **Right** _or_ **Volume Down** |
+| **Previous Page** | Press **Left** _or_ **Side Up**    |
+| **Next Page**     | Press **Right** _or_ **Side Down** |
 
-The role of the volume (side) buttons can be swapped in the **[Controls Settings](#363-controls)**.
+The role of the side buttons can be swapped in the **[Controls Settings](#363-controls)**.
 
 If the **Short Power Button Click** setting is set to "Page Turn", you can also turn to the next page by briefly pressing the Power button.
 
 ### Chapter Navigation
 
-* **Next Chapter:** Press and **hold** the **Right** (or **Volume Down**) button briefly, then release.
-* **Previous Chapter:** Press and **hold** the **Left** (or **Volume Up**) button briefly, then release.
+* **Next Chapter:** Press and **hold** the **Right** (or **Side Down**) button briefly, then release.
+* **Previous Chapter:** Press and **hold** the **Left** (or **Side Up**) button briefly, then release.
 
 This feature can be disabled in the **[Controls Settings](#363-controls)** to help avoid changing chapters by mistake.
 
@@ -581,6 +585,12 @@ When reading an EPUB that contains footnotes, you can navigate to the footnote t
 
 If the device goes to sleep or you close the book while viewing a footnote, the book reopens to your original reading position, not the footnote.
 
+### Dictionary Lookup
+
+Words on the current page can be looked up in an offline StarDict dictionary stored on the SD card. Copy a dictionary to the `/dictionaries/` folder, select it in **Settings → Reader → Dictionary**, then start a lookup by choosing **Look Up** in the **[Reader Menu](#5-reader-menu)** (or by holding **Confirm**, if the **Long-press Menu** setting in **[Controls Settings](#363-controls)** is set to "Dictionary"). Use **Left/Right** to highlight a word and press **Confirm** to show its definition.
+
+See [docs/dictionary.md](docs/dictionary.md) for supported formats, setup, and where to find dictionaries.
+
 ### System Navigation
 
 * **Return to Home:** Press the **Back** button to close the book and return to the **[Home](#31-home-screen)** screen.
@@ -590,7 +600,7 @@ If the device goes to sleep or you close the book while viewing a footnote, the 
 
 ### Supported Languages
 
-CrossPoint renders text using the following Unicode character blocks, enabling support for a wide range of languages:
+Ink Bible renders text using the following Unicode character blocks, enabling support for a wide range of languages:
 
 * **Latin Script (Basic, Supplement, Extended-A/B):** Covers English, German, French, Spanish, Portuguese, Italian, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Slovak, Slovenian, Turkish, Catalan, and others.
 * **Cyrillic Script (Standard and Extended):** Covers Russian, Ukrainian, Belarusian, Bulgarian, Serbian, Macedonian, Kazakh, Kyrgyz, Mongolian, and others.
@@ -624,7 +634,7 @@ Press **Back** at any time to close the menu and return to your current page.
 
 Accessible by selecting **Chapters** from the Reader Menu.
 
-1. Use **Left** (or **Volume Up**), or **Right** (or **Volume Down**) to highlight the desired chapter.
+1. Use **Left** (or **Side Up**), or **Right** (or **Side Down**) to highlight the desired chapter.
 2. Press **Confirm** to jump to that chapter.
 3. *Alternatively, press **Back** to cancel and return to your current page.*
 
@@ -638,7 +648,7 @@ To create a bookmark, hold **Confirm** for about half a second while inside a bo
 
 To open bookmarks, press **Confirm** while inside a book. Then navigate to the **Bookmarks** menu. Bookmarks can be opened by navigating to them and pressing **Confirm**, which will redirect you to that place in the book. You can delete bookmarks by holding **Confirm** for about 0.7 seconds, and then pressing **Confirm** again to confirm deletion, or **Back** to cancel.
 
-Bookmarks are stored in the `.crosspoint/bookmarks` folder in the JSON format.
+Bookmarks are stored in the `.inkbible/bookmarks` folder in JSON format.
 
 ## 6. Current Limitations & Roadmap
 
@@ -646,16 +656,14 @@ Please note that this firmware is currently in active development. The following
 
 * **Cover Images:** Large cover images embedded into EPUB require several seconds (~10s for ~2000 pixel tall image) to convert for sleep screen and home screen thumbnail. Consider optimizing the EPUB with e.g. https://github.com/bigbag/epub-to-xtc-converter to speed this up.
 * **Unsupported Image Formats:** Most JPG and PNG images in EPUBs render correctly. GIFs and progressive JPEGs are not supported and will fall back to an `[Image]` placeholder.
-* 
-* **Dictionary Lookup:** Inline word lookup is not yet implemented.
 
 ---
 
 ## 7. Troubleshooting Issues & Escaping Bootloop
 
-If an issue or crash is encountered while using Crosspoint, feel free to raise an issue ticket and attach the logs.
+If an issue or crash is encountered while using Ink Bible, feel free to raise an issue ticket and attach the logs.
 
-**Crash reports on SD card:** After a crash, CrossPoint automatically saves a crash report to the SD card (no USB connection needed). Check the root of the SD card for a crash log file and include it with any bug report.
+**Crash reports on SD card:** After a crash, Ink Bible automatically saves a crash report to the SD card (no USB connection needed). Check the root of the SD card for a crash log file and include it with any bug report.
 
 **Serial monitor logs:** For more detailed debugging, connect the device to a computer and run the custom debugging monitor script (requires Python 3 with `pyserial`, `colorama`, and `matplotlib`; install via `pip3 install pyserial colorama matplotlib`):
 
@@ -700,4 +708,4 @@ Press **Ctrl-C** or close the graph window to exit.
 
 If the device is stuck in a bootloop, press and release the Reset button. Then, press and hold on to the configured Back button and the Power Button to boot to the Home Screen.
 
-There can be issues with broken cache or config. In this case, delete the `.crosspoint` directory on your SD card (or consider deleting only `settings.json`, `state.json`, or `epub_*` cache directories in the `.crosspoint/` folder).
+There can be issues with broken cache or config. In this case, delete the `.inkbible` directory on your SD card (or consider deleting only `settings.json`, `state.json`, or `epub_*` cache directories in the `.inkbible/` folder).
