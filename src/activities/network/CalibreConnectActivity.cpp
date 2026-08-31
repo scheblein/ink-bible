@@ -13,7 +13,7 @@
 #include "util/TaskWatchdog.h"
 
 namespace {
-constexpr const char* HOSTNAME = "crosspoint";
+constexpr const char* HOSTNAME = "inkbible";
 }  // namespace
 
 void CalibreConnectActivity::onEnter() {
