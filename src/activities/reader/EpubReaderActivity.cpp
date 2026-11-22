@@ -1180,87 +1180,6 @@ void EpubReaderActivity::openChapterSelection(const bool reopenMenuOnCancel) {
                          });
 }
 
-void EpubReaderActivity::openBibleVersionSelection() {
-  constexpr size_t MAX_VERSION_OPTIONS = 15;
-  std::vector<std::string> paths;
-  std::vector<std::string> labels;
-  paths.reserve(MAX_VERSION_OPTIONS);
-  labels.reserve(MAX_VERSION_OPTIONS);
-  paths.push_back(BibleCanon::DEFAULT_BIBLE_EPUB_PATH);
-  labels.push_back(tr(STR_NET_BIBLE_BUILTIN));
-
-  auto scanDir = [&](const char* dirPath) {
-    RenderLock lock(*this);
-    auto dir = Storage.open(dirPath);
-    if (!dir || !dir.isDirectory()) return;
-    dir.rewindDirectory();
-    char nameBuf[128];
-    for (auto file = dir.openNextFile(); file; file = dir.openNextFile()) {
-      if (file.isDirectory()) continue;
-      file.getName(nameBuf, sizeof(nameBuf));
-      if (nameBuf[0] == '.' || !FsHelpers::checkFileExtension(std::string_view{nameBuf}, ".epub")) continue;
-      std::string fullPath =
-          (strcmp(dirPath, "/") == 0) ? (std::string("/") + nameBuf) : (std::string(dirPath) + "/" + nameBuf);
-      if (fullPath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH) {
-        labels[0] = tr(STR_BIBLE_SD_CARD);
-        continue;
-      }
-      if (paths.size() >= MAX_VERSION_OPTIONS) break;
-      if (std::find(paths.begin(), paths.end(), fullPath) != paths.end()) continue;
-      std::string label(nameBuf);
-      const size_t dot = label.rfind('.');
-      if (dot != std::string::npos) label.resize(dot);
-      paths.push_back(std::move(fullPath));
-      labels.push_back(std::move(label));
-    }
-  };
-
-  scanDir("/bibles");
-  scanDir("/");
-
-  int currentIdx = 0;
-  for (size_t i = 0; i < paths.size(); ++i) {
-    if (paths[i] == bookPath) {
-      currentIdx = static_cast<int>(i);
-      break;
-    }
-  }
-
-  loadFailurePopup.show(StrId::STR_BIBLE_VERSION, labels, currentIdx, [this, paths = std::move(paths)](const int idx) {
-    if (idx < 0 || idx >= static_cast<int>(paths.size())) return;
-    const std::string& targetPath = paths[idx];
-    if (targetPath == bookPath) {
-      requestUpdate();
-      return;
-    }
-    {
-      RenderLock lock(*this);
-      const int page = section ? section->currentPage : nextPageNumber;
-      const int pageCount = section ? section->estimatedTotalPages() : cachedChapterTotalPageCount;
-      saveProgress(currentSpineIndex, page, pageCount);
-
-      if (epub && epub->getSpineItemsCount() == BibleCanon::TOTAL_CHAPTER_COUNT) {
-        const int clampedSpine = std::clamp(currentSpineIndex, 0, BibleCanon::TOTAL_CHAPTER_COUNT - 1);
-        const std::string targetCacheDir =
-            std::string("/.crosspoint/epub_") + std::to_string(std::hash<std::string>{}(targetPath));
-        Storage.mkdir("/.crosspoint");
-        Storage.mkdir(targetCacheDir.c_str());
-        uint8_t data[6];
-        data[0] = clampedSpine & 0xFF;
-        data[1] = (clampedSpine >> 8) & 0xFF;
-        data[2] = 0;
-        data[3] = 0;
-        data[4] = 0;
-        data[5] = 0;
-        ProgressFile::writeAtomic(targetCacheDir, data, sizeof(data));
-      }
-      section.reset();
-    }
-    activityManager.goToReader(targetPath);
-  });
-  requestUpdate();
-}
-
 void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction action) {
   auto progressChangeResultHandler = [this](const ActivityResult& result) {
     loadCachedBookmarks();
@@ -1276,10 +1195,6 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
   switch (action) {
     case EpubReaderMenuActivity::MenuAction::SELECT_CHAPTER: {
       openChapterSelection(true);
-      break;
-    }
-    case EpubReaderMenuActivity::MenuAction::SWITCH_BIBLE: {
-      openBibleVersionSelection();
       break;
     }
     case EpubReaderMenuActivity::MenuAction::FOOTNOTES: {

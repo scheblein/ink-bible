@@ -1,311 +1,131 @@
-# InkBible (NET Bible Reader — CrossPoint Fork)
+# Ink Bible
 
-[![Fund contributors](https://img.shields.io/badge/%F0%9F%91%91_Fund_contributors-royalty.dev-BB953A?style=for-the-badge&labelColor=1a1a1a)](https://app.royalty.dev/crosspoint-reader/crosspoint-reader)
+**Ink Bible** is an all-in-one, dedicated handheld **NET Bible (New English Translation)** firmware for the **Xteink X3 and X4** e-paper readers (and other FreeInk-supported ESP32 devices).
 
-InkBible is an **all-in-one dedicated handheld NET Bible (New English Translation)** firmware for Xteink X3 / X4 (and other FreeInk devices), forked from CrossPoint open-source e-reader firmware. The complete 66-book, 1,189-chapter, 31,102-verse NET Bible is embedded directly inside the firmware flash (`firmware.bin`) and boots straight into Scripture with a fast 3-stage **Book → Chapter → Verse** passage picker while retaining core CrossPoint utilities (bookmarks, clippings/highlights, custom SD fonts, display/text settings, Bluetooth page turner, Wi-Fi File Transfer, and SD firmware update).
-
-## All-in-One Firmware (`firmware.bin`)
-
-The build script (`scripts/generate_net_bible_epub.py`) automatically compiles the NET Bible USFM text into flash-resident compressed chapter blocks (`lib/BibleCanon/NetBibleData.generated.cpp`, ~1.56 MB in `.rodata`) during `pio run -e default`:
-
-- **No manual `bible.epub` copy required**: Simply flash `.pio/build/default/firmware.bin` to your X3/X4 (with an SD card inserted for layout cache, bookmarks, and clippings) and power it on — the firmware streams the NET Bible directly from internal flash! (If you ever place a custom `/bible.epub` on the SD card, it takes precedence over the built-in flash text.)
-- **Multi-Version Bible Generator & Footnotes**: Generate standalone 1,189-chapter Bible EPUBs (with linked USFM translator footnotes viewable via **Links and Footnotes**) for the SD card (`/bibles/*.epub` or `/`) using `python3 scripts/generate_net_bible_epub.py -v <net|bsb|web|kjv|asv> -o bsb.epub`, and switch translations on-device via **Reader Menu → Bible Version** while preserving your current Book & Chapter.
-- **Direct-to-Bible Startup**: On power-on or wake, the device opens your last reading position (or the built-in NET Bible at Genesis 1 automatically). Holding **Back** during startup opens the SD Card File Browser at `/`.
-- **Fast Passage Picker (`Book → Chapter → Verse`)**: While reading, press **Back** (short press) or open the Reader Menu (**Confirm**) and select **Go to Passage** to pick any of the 66 canonical Books, its Chapter, and its exact Verse. Pressing **Back** inside the picker steps back from `Verse → Chapter → Book → Reading Page`.
-- **Chapter Skip**: Long-pressing Next/Previous Page (when **Page turn long press** is set to **Chapter skip**) jumps directly to the next or previous Bible chapter.
-- **Reader Menu Access**: Press **Confirm** to access **Go to Passage**, **Bible Version**, **Links and Footnotes**, **Text Settings**, **Add/Remove Bookmark**, **Bookmarks**, **Create/View Clippings**, **Settings**, and **File Transfer**.
-
-### Now running on:
-
-- **ESP32C3-based** Xteink X4 and X3.
-- **ESP32S3-based** Xteink X4Pro and X4Classic, Seeed reTerminal Sticky, M5PaperMono, Metalio E-Ink 4, EEGOREAD A4 and Boox Picco.
-
-Check [our Devices page](https://crosspointreader.com/devices) for the full list.
-
-![CrossPoint Reader running on Xteink device](./docs/images/cover.jpg)
-
-> If you're planning to buy an Xteink device, consider purchasing an **X3/X4 Developer Edition** through https://crosspointreader.com. CrossPoint receives a small share of each sale, helping fund development costs.
-
-## What can CrossPoint do?
-
-- **Reader engine**: EPUB 2/3 rendering with embedded-style option, image handling, hyphenation, kerning, adaptive table layouts, native CJK ruby annotations, chapter navigation, footnotes, bookmarks, dictionary lookups ([StarDict](docs/dictionary.md)), go-to-percent, auto page turn, orientation control, focus reading, KOReader progress sync and more.
-
-- **Various formats**: native handling for `.epub`, `.xtc/.xtch`, `.txt`, and `.bmp`.
-
-- **Touch reading**: follow EPUB links and look up words in the dictionary on touch-enabled devices.
-
-- **Highlights and clippings**: highlight text in EPUBs and save excerpts as clippings. Use the reader menu on button devices, or hold a word and drag the selection handles on touch devices. Look up selected words or phrases in the dictionary. Enable Sync Clippings to sync saved excerpts through a compatible CrossPoint Sync server. See [Clippings and Highlights](USER_GUIDE.md#53-clippings-and-highlights).
-
-- **Screenshots.**
-
-- **Custom fonts**: install your favorite fonts on the SD card.
-
-- **Tilt page turn (X3 and Sticky)**.
-
-- **Bluetooth page turners**: pair a remote under Settings → Connectivity → Bluetooth Page Turner. Map short and long presses to page turns, chapter navigation, the reader menu, or clipping selection.
-
-- **USB Drive mode (X4Pro)**: access the SD card as USB mass storage.
-
-- **Library workflow**: indexed title/author search, recently-added and alphabetical views, multilingual grouping, folder browser, recent books, and SD-cache management.
-
-- **Wireless workflows**:
-  
-  - File transfer web UI
-  - EPUB Optimizer
-  - Web settings UI/API (edit many device settings from browser)
-  - WebSocket fast uploads
-  - WebDAV handler
-  - AP mode (hotspot) and STA mode (join existing Wi-Fi), both with QR helpers
-  - Calibre wireless connect flow
-  - OPDS browser with saved servers (up to 8), search, pagination, and direct download
-  - OTA update checks and installs from GitHub releases
-
-- **Customization**: night mode, multiple themes (Classic, Lyra, Lyra Extended, RoundedRaff), sleep screen modes including transparent overlays, front/side button remapping, status bar controls, power-button behavior, refresh cadence, and more.
-
-- **Localization**: 34 UI languages and counting, including CJK font fallback and RTL support.
-
-- **SD card plugins**: install plugins for book catalogs, downloads, and tools in the device's web interface. Enable Plugins under Settings → Connectivity to show them on Home. On-device plugins use existing firmware screens and operations. JavaScript runs in a browser on your phone or computer, and its page must stay open while it works. Plugins follow [CrossPoint's reading-focused scope](SCOPE.md#out-of-scope). See the [plugin guide](docs/sd-plugins.md).
-
-### Coming soon:
-
-- More themes.
-
-- Much more! stay tuned.
+The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled directly into the firmware flash image (`firmware.bin`) — no `.epub` files need to be copied to the SD card. Power on the device and it opens straight into Scripture with a fast 3-stage **Book → Chapter → Verse** passage picker.
 
 ---
 
-## USB-locked devices (Xteink Unlocker)
+## Key Features
 
-Some Xteink units purchased from third-party stores (e.g. AliExpress) ship with USB flashing locked from the factory.
-If your device is locked, you will need to use the **Xteink Unlocker** tool available at
-https://crosspointreader.com/#unlock-tool before you can flash CrossPoint.
-
-**You do not need this tool if you bought your device directly from xteink.com.** Those units are not locked.
-
-**Not sure if your device is locked?** Power it on, connect the USB-C cable, and try flashing via the web flasher first (see
-[Install firmware](#install-firmware) below). If the browser's serial device picker does not show your device, try a different
-USB port or browser before assuming the device is locked. Only reach for the unlocker if the device still doesn't appear.
-
-> ### ⚠️ WARNING: READ THIS BEFORE USING THE UNLOCKER ⚠️
-> 
-> **The only officially supported firmwares in the unlock tool are CrossPoint and CrossInk.**
-> 
-> Flashing any other firmware on a USB-locked device may **permanently brick the device** or leave it **permanently
-> stuck on that firmware with no recovery path**. Once USB flashing is re-locked, your only way back is via OTA, and if
-> the firmware you flashed doesn't support OTA, **there is no way out**.
-
-## Install firmware
-
-### Web installer (recommended)
-
-1. Connect your device to your computer via USB-C and wake/unlock the device
-2. Go to https://crosspointreader.com/#flash-tools, select your device (X3, X4, Xteink X4Pro, Seeed reTerminal Sticky, or M5PaperMono), and choose an official CrossPoint release.
-
-### Web installer (specific version)
-
-1. Connect your device to your computer via USB-C and wake/unlock the device
-2. Download the firmware file for your device from [Releases](https://github.com/crosspoint-reader/crosspoint-reader/releases), or compile yourself.
-3. Go to https://crosspointreader.com/#flash-tools, select your device, click "Custom .bin" and upload the firmware file.
-
-### Revert to Official Firmware
-
-To revert to the official firmware, you can also flash the latest official firmware using https://crosspointreader.com/#flash-tools.
-
-### Command line
-
-1. Install [`esptool`](https://github.com/espressif/esptool):
-
-```bash
-pip install esptool
-```
-
-2. Download the firmware file for your device from the [releases page](https://github.com/crosspoint-reader/crosspoint-reader/releases).
-3. Connect your device via USB-C.
-4. Find the device port. On Linux, run `dmesg` after connecting. On macOS:
-
-```bash
-log stream --predicate 'subsystem == "com.apple.iokit"' --info
-```
-
-5. Flash an X3 or X4:
-
-```bash
-esptool.py --chip esp32c3 --port /dev/ttyACM0 --baud 921600 write_flash 0x10000 /path/to/firmware.bin
-```
-
-   Flash an Xteink X4Pro, Seeed reTerminal Sticky, or M5PaperMono:
-
-```bash
-esptool.py --chip esp32s3 --port /dev/ttyACM0 --baud 921600 write_flash 0x10000 /path/to/firmware.bin
-```
-
-### Manual
-
-See [Development quick start](#development-quick-start) below.
+- **All-in-One Flash-Embedded NET Bible**: The entire 66-book Protestant canon (`lib/BibleCanon/NetBibleData.generated.cpp`, ~1.56 MB compressed in `.rodata`) streams directly from internal flash on demand. An SD card is used only for saving reading progress, layout caches, bookmarks, clippings, and custom fonts. *(If you ever place a custom `/bible.epub` on the SD card, it overrides the built-in flash text.)*
+- **Direct-to-Scripture Startup**: Wakes directly to your last reading position (or Genesis 1 on first boot). Holding **Back** during startup opens the SD Card File Browser at `/`.
+- **3-Stage Passage Picker (`Book → Chapter → Verse`)**:
+  - Press **Back** (short press) while reading — or select **Go to Passage** from the Reader Menu (**Confirm**) — to open the canonical picker:
+    1. **Select Book** (Genesis – Revelation, with chapter counts)
+    2. **Select Chapter** (`1 .. N`)
+    3. **Select Verse** (`1 .. M`) — jumps directly to the exact page containing that verse.
+  - Pressing **Back** inside the picker steps back (`Verse → Chapter → Book → Reading Page`).
+- **Inline Translator & Study Footnotes**: USFM footnotes (`[1]`, `[2]`, ...) are linked in the text and accessible via **Reader Menu → Links and Footnotes**; pressing **Back** returns to your verse.
+- **Bookmarks, Highlights & Clippings**: Bookmark any page or select and save verse ranges as highlighted clippings (exported to `/My Clippings.txt` on the SD card).
+- **Clean Typography & Layout**:
+  - Poetry indentation, Psalm superscriptions, section headings, small-caps divine name (`LORD`), and italics.
+  - Adjustable font family, point size, line spacing, margins, paragraph alignment, night mode (inverted display), and reading orientation.
+  - Custom SD-card font support (`.cpfont` in `/fonts/`).
+- **Hardware Controls & Accessories**:
+  - Chapter skip via long-press on Next/Previous Page buttons.
+  - Optional Tilt Page Turn for X3 / IMU devices (**Settings → Controls → Tilt Page Turn**).
+  - Bluetooth page turner remote support (**Settings → Connectivity → Bluetooth Page Turner**).
+- **Wireless File Transfer & OTA Updates**:
+  - Built-in Wi-Fi Web UI (**Reader Menu → File Transfer**, hotspot SSID `Ink-Bible` at `http://inkbible.local/` or station mode) for managing clippings, screenshots, settings, and SD fonts.
+  - Over-the-air (OTA) firmware updates from [GitHub Releases](https://github.com/scheblein/ink-bible/releases) or SD card `.bin` updates.
 
 ---
 
-## Custom SD-card fonts
+## Quick Controls Reference (Xteink X3 / X4)
 
-On devices with external RAM enabled in CrossPoint, copy `.ttf`, `.otf`, or `.ttc` files to the SD card and select them as reader fonts. Put one file in `/fonts/` or `/.fonts/`, or put one family's files in a subfolder. See the [SD card font guide](./docs/sd-card-fonts.md) for the folder layout and styles.
+| Action | Button / Gesture |
+| --- | --- |
+| **Next / Previous Page** | Right / Left (or Down / Up side buttons) |
+| **Next / Previous Chapter** | Long-press Next / Previous Page |
+| **Go to Passage (`Book → Chapter → Verse`)** | Short-press **Back** (or **Confirm → Go to Passage**) |
+| **Reader Menu** | Short-press **Confirm** |
+| **Return from Footnote** | Short-press **Back** while viewing a footnote |
+| **Sleep / Wake** | Long-press **Power** |
+| **SD File Browser (Escape Hatch)** | Hold **Back** during power-on boot |
 
-On other devices, convert the font to `.cpfont` first. `.cpfont` files also work on devices with external RAM enabled and have better performance. No firmware reflash is needed to add fonts.
+---
 
-To make `.cpfont` files:
+## Installing Ink Bible
 
-1. Go to https://crosspointreader.com/fonts and open the "SD-card font builder" form.
-2. Upload up to four styles (regular, bold, italic, bold-italic), set the family name, point sizes, and Unicode range.
-3. Download the generated `.cpfont` files.
-4. Copy them to your SD card under `/fonts/YourFont/` (or `/.fonts/YourFont/` to hide the folder).
-5. Select the font on the device from the font settings.
+### Option 1: Build & Flash via PlatformIO (Recommended for Developers)
 
-Conversion runs the firmware repo's `lib/EpdFont/scripts/fontconvert_sdcard.py` script unmodified, so output matches a local host build.
+1. Clone the repository with submodules:
+   ```bash
+   git clone --recursive https://github.com/scheblein/ink-bible.git
+   cd ink-bible
+   ```
+2. Wake your X3/X4 so it is on the reading screen and connect it via USB-C.
+3. Build and upload:
+   ```bash
+   pio run -e default -t upload
+   ```
+   *(During the build, `scripts/generate_net_bible_epub.py` automatically downloads and caches the official NET Bible USFM archive from eBible.org and generates the flash-embedded C++ chapter tables.)*
+
+### Option 2: Flash a Prebuilt Release Binary (`esptool`)
+
+1. Download `ink-bible-<version>-x3-x4.bin` from [GitHub Releases](https://github.com/scheblein/ink-bible/releases).
+2. Wake your X3/X4 and connect it via USB-C.
+3. Flash at offset `0x10000`:
+   ```bash
+   pip install esptool
+   esptool.py --chip esp32c3 --baud 921600 write_flash 0x10000 ink-bible-<version>-x3-x4.bin
+   ```
+
+> **Note on USB-Locked Third-Party Xteink Devices:**
+> Units purchased directly from `xteink.com` are unlocked. Some units purchased from third-party resellers (e.g. AliExpress) ship with USB flashing locked; see [CrossPoint's Unlocker Tool](https://crosspointreader.com/#unlock-tool) before flashing if your device does not appear as a USB serial port when awake.
+
+---
+
+## Generating a Standalone `bible.epub` (Optional)
+
+Although the NET Bible is embedded directly in the firmware flash, you can also generate a standalone `bible.epub` archive at any time:
+
+```bash
+python3 scripts/generate_net_bible_epub.py -o bible.epub
+```
+
+---
+
+## Development & Verification
+
+### Prerequisites
+
+- [pioarduino PlatformIO Core](https://github.com/pioarduino/platformio-core)
+- Python 3.8+
+- `clang-format`
+- CMake & Ninja (for host unit tests)
+
+### Running Checks & Tests
+
+```bash
+# Format C/C++ sources
+./bin/clang-format-fix -g
+
+# Static analysis
+pio check --skip-packages -e default --fail-on-defect=medium --fail-on-defect=high
+
+# Host unit tests
+cmake -S test -B build/test -GNinja
+cmake --build build/test
+ctest --test-dir build/test --output-on-failure
+
+# Build X3/X4 firmware binary
+pio run -e default
+```
 
 ---
 
 ## Documentation
 
 - [User Guide](./USER_GUIDE.md)
-- [Web server usage](./docs/webserver.md)
-- [Web server endpoints](./docs/webserver-endpoints.md)
-- [Project scope](./SCOPE.md)
-- [Contributing docs](./docs/contributing/README.md)
-- [Touch and UI development](./docs/contributing/touch-and-ui.md) - how to build new screens on the FreeInkUI activity bases (UiListActivity and friends), plus build envs for the non-Xteink touch devices
+- [Web Server Guide](./docs/webserver.md)
+- [SD Card Fonts Guide](./docs/sd-card-fonts.md)
+- [File Formats & Cache Structure](./docs/file-formats.md)
 
 ---
 
-## Development quick start
+## License & Acknowledgments
 
-### Prerequisites
-
-- [pioarduino PlatformIO Core](https://github.com/pioarduino/platformio-core) or [VS Code + pioarduino IDE](https://github.com/pioarduino/pioarduino-vscode-ide)
-- Python 3.8+
-- `clang-format` 21
-- USB-C cable supporting data transfer
-
-### Setup
-
-```bash
-git clone --recursive https://github.com/crosspoint-reader/crosspoint-reader
-cd crosspoint-reader
-
-# if cloned without --recursive:
-git submodule update --init --recursive
-```
-
-### Nix/NixOS
-
-Nix/NixOS users can enter the development shell with either `nix develop` (flakes) or `nix-shell`:
-
-```bash
-nix develop -f nix
-# or
-nix-shell nix
-```
-
-To flash a connected ESP32-C3 device, enable PlatformIO's udev rules in your NixOS configuration:
-
-```nix
-services.udev.packages = with pkgs; [ platformio-core.udev ];
-```
-
-After rebuilding the system configuration, reconnect the device or reload udev rules.
-
-### Build / flash / monitor
-
-```bash
-pio run --target upload
-```
-
-### Contributor pre-PR checks
-
-```bash
-./bin/clang-format-fix
-pio check -e default
-pio run -e default
-```
-
-### Debugging
-
-After flashing the new features, it’s recommended to capture detailed logs from the serial port.
-
-First, make sure all required Python packages are installed:
-
-```python
-python3 -m pip install pyserial colorama matplotlib
-```
-
-After that run the script:
-
-```sh
-# For Linux
-# This was tested on Debian and should work on most Linux systems.
-python3 scripts/debugging_monitor.py
-
-# For macOS
-python3 scripts/debugging_monitor.py /dev/cu.usbmodem2101
-```
-
-Minor adjustments may be required for Windows.
-
----
-
-## Internals
-
-CrossPoint Reader is pretty aggressive about caching data down to the SD card to minimise RAM usage. The ESP32-C3 only has ~380KB of usable RAM, so we have to be careful. A lot of the decisions made in the design of the firmware were based on this constraint.
-
-### Data caching
-
-The first time chapters of a book are loaded, they are cached to the SD card. Subsequent loads are served from the
-cache. This cache directory exists at `.crosspoint` on the SD card. The structure is as follows:
-
-```text
-.crosspoint/
-├── epub_<hash>/         # one directory per book, named by content hash
-│   ├── progress.bin     # reading position (chapter, page, etc.)
-│   ├── cover.bmp        # generated cover image
-│   ├── book.bin         # metadata: title, author, spine, TOC
-│   ├── css_rules.cache  # parsed CSS rule cache
-│   ├── img_*            # rendered image cache files
-│   └── sections/        # per-chapter layout cache
-│       ├── 0.bin
-│       ├── 1.bin
-│       └── ...
-├── settings.json        # device settings
-├── state.json           # resume/runtime state
-└── recent.json          # recent books list
-```
-
-Removing `/.crosspoint` clears all cached metadata and forces a full regeneration on next open. Book deletes, overwrites, and moves done through the firmware or web UI clear or re-key matching caches; manual SD-card edits may leave stale cache directories behind.
-
-For more details on the internal file structures, see the [file formats document](./docs/file-formats.md).
-
----
-
-## Contributing
-
-Contributions are welcome. If you're new to the codebase, start with the [contributing docs](./docs/contributing/README.md). For things to work on, check the [ideas discussion board](https://github.com/crosspoint-reader/crosspoint-reader/discussions/categories/ideas) — leave a comment before starting so we don't duplicate effort.
-
-Everyone here is a volunteer, so please be respectful and patient. For governance and community expectations, see [GOVERNANCE.md](./GOVERNANCE.md).
-
----
-
-## Community forks
-
-One of the best things about open source is that anyone can take the code in a different direction. If you need something outside CrossPoint's [scope](./SCOPE.md), check out the community forks:
-
-- [CrossInk](https://github.com/uxjulia/CrossInk) — UX focused with minimal reading stats and broader customizations for the reading experience.
-
-- [papyrix-reader](https://github.com/bigbag/papyrix-reader) — Adds FB2 and MD format support. Actively maintained with Arabic script support. Custom themes.
-
-- [inx](https://github.com/obijuankenobiii/inx) — Completely reimagines the user interface with tabbed navigation.
-
-- [Witch(hunt) Reader](https://github.com/jpirnay/witchhunt-reader) — More faithful CSS styling and background work for slightly snappier interaction. Weather information panel. Markdown support.
-
-**Note:** Many of these features will make their way into CrossPoint over time. Each project chooses its own priorities and tradeoffs.
-
-Want to build your own device? Be sure to check out the [Silkscreen](https://silkscreenreader.com) project or [OnePage Reader](https://github.com/MoveCall/onepage-reader).
-
----
-
-CrossPoint Reader is **not affiliated with Xteink or any device manufacturer**.
+- **Firmware Code**: MIT License (`LICENSE`). Built on [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) and the [FreeInk SDK](https://freeink.org).
+- **Scripture Text**: NET Bible® copyright © 1996–2016 by Biblical Studies Press, L.L.C. (https://netbible.com). All rights reserved. Used in accordance with Biblical Studies Press's free ministry/non-commercial distribution terms.

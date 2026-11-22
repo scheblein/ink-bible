@@ -696,8 +696,7 @@ The list menu remembers the selected entry while the book stays open. If that en
 
 Available options include:
 
-- **Go to Passage** – Open the 3-stage **Book → Chapter → Verse** passage selector for `/bible.epub` (and other 1,189-chapter Bible EPUBs), or the table of contents for other EPUBs (see [Passage & Chapter Selection](#51-chapter-selection) below).
-- **Bible Version** – Switch between the built-in NET Bible and any `.epub` Bibles placed in `/bibles/` or `/` on the SD card while staying on your current Book and Chapter.
+- **Go to Passage** – Open the 3-stage **Book → Chapter → Verse** passage selector for `/bible.epub`, or the table of contents for other EPUBs (see [Passage & Chapter Selection](#51-chapter-selection) below).
 - **Text Settings** – Adjust font family, font size, line spacing, margins, alignment, and hyphenation with live preview.
 - **Links and Footnotes** – Select an internal link on the current page. This option appears when the page contains links.
 - **Bluetooth Page Turner** – Toggle Bluetooth for the saved remote. This entry appears after pairing a remote in **Settings → Connectivity → Bluetooth Page Turner** and disappears if that selected remote is forgotten.

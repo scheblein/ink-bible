@@ -200,7 +200,6 @@ class EpubReaderActivity final : public ReaderActivity {
   std::string moreRowValue(int row) const;
   void activateMoreRow(int row);
   void openChapterSelection(bool reopenMenuOnCancel);
-  void openBibleVersionSelection();
   void openFootnoteSelect(bool reopenMenuOnCancel);
   void openDictionaryWordSelect();
   void startClipSelection(int initialX = -1, int initialY = -1,

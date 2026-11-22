@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
 """
-Generate a Bible EPUB (or embedded flash C++ data) optimized for the Ink Bible
-firmware on CrossPoint Reader (Xteink X3/X4).
+Generate a NET Bible (New English Translation) EPUB (or embedded flash C++ data)
+optimized for the Ink Bible firmware on Xteink X3 / X4.
 
-Supports multiple free/open Bible translations from eBible.org USFM archives,
-with the NET Bible (New English Translation) as the default embedded firmware Bible:
-- `net`: NET Bible (New English Translation) — default embedded in firmware
-- `bsb`: Berean Standard Bible (Modern English, Public Domain / CC0, with full footnotes)
-- `web`: World English Bible (Modern English, Public Domain, with translator notes)
-- `kjv`: King James Version (Classic English, Public Domain)
-- `asv`: American Standard Version (Classic English, Public Domain)
-
-Each generated EPUB archive has:
-- Each of the 1,189 canonical chapters as its own spine XHTML item
+Downloads the official public USFM package from eBible.org (or reads a local
+engnet_usfm.zip cache) and compiles an EPUB 2/3 archive where:
+- Each of the 1,189 canonical chapters is its own spine XHTML item
   (`B01_C001.xhtml` .. `B66_C022.xhtml`), matching the firmware's `BibleCanon`
   table (`chapterOffset + chapter - 1` -> `spineIndex 0 .. 1188`).
-- Each verse beginning with `<b id="vM">M</b>` (recorded as a navigable anchor by
+- Each verse begins with `<b id="vM">M</b>` (recorded as a navigable anchor by
   the firmware parser for instant Book -> Chapter -> Verse lookup).
-- USFM translator footnotes (`\\f ... \\f*`) emitted as linked EPUB footnotes
+- USFM translator footnotes (`\\f ... \\f*`) are emitted as linked EPUB footnotes
   (`<a href="#fnN">[N]</a>` + `<p id="fnN"><a href="#fnrefN"><b>[N]</b></a> ...</p>`)
   viewable via the firmware's Links & Footnotes feature.
 """
@@ -32,54 +25,13 @@ import zipfile
 import zlib
 from pathlib import Path
 
+USFM_URL = "https://ebible.org/Scriptures/engnet_usfm.zip"
 PROJECT_ROOT = Path(__file__).parent.parent if "__file__" in globals() else Path.cwd()
+DEFAULT_CACHE_ZIP = PROJECT_ROOT / ".cache" / "engnet_usfm.zip"
 DEFAULT_OUTPUT = PROJECT_ROOT / "bible.epub"
 DEFAULT_CPP_OUTPUT = PROJECT_ROOT / "lib" / "BibleCanon" / "NetBibleData.generated.cpp"
 DEFAULT_HEADER_PATH = PROJECT_ROOT / "lib" / "BibleCanon" / "NetBibleData.h"
 GROUP_SIZE = 16
-
-BIBLE_VERSIONS = {
-    "net": {
-        "title": "NET Bible",
-        "creator": "Biblical Studies Press",
-        "rights": "NET Bible® copyright © 1996-2016 Biblical Studies Press, L.L.C.",
-        "identifier": "ink-bible-net-v1",
-        "url": "https://ebible.org/Scriptures/engnet_usfm.zip",
-        "cache_name": "engnet_usfm.zip",
-    },
-    "bsb": {
-        "title": "Berean Standard Bible (BSB)",
-        "creator": "Berean Bible",
-        "rights": "Public Domain (CC0 1.0 Universal)",
-        "identifier": "ink-bible-bsb-v1",
-        "url": "https://ebible.org/Scriptures/engbsb_usfm.zip",
-        "cache_name": "engbsb_usfm.zip",
-    },
-    "web": {
-        "title": "World English Bible (WEB)",
-        "creator": "ebible.org",
-        "rights": "Public Domain",
-        "identifier": "ink-bible-web-v1",
-        "url": "https://ebible.org/Scriptures/engwebp_usfm.zip",
-        "cache_name": "engwebp_usfm.zip",
-    },
-    "kjv": {
-        "title": "King James Version (KJV)",
-        "creator": "Public Domain",
-        "rights": "Public Domain",
-        "identifier": "ink-bible-kjv-v1",
-        "url": "https://ebible.org/Scriptures/eng-kjv2006_usfm.zip",
-        "cache_name": "eng-kjv2006_usfm.zip",
-    },
-    "asv": {
-        "title": "American Standard Version (ASV)",
-        "creator": "Public Domain",
-        "rights": "Public Domain",
-        "identifier": "ink-bible-asv-v1",
-        "url": "https://ebible.org/Scriptures/eng-asv_usfm.zip",
-        "cache_name": "eng-asv_usfm.zip",
-    },
-}
 
 # Standard 66-book Protestant canon USFM \id codes in canonical order (Genesis .. Revelation).
 CANONICAL_USFM_IDS = [
@@ -101,8 +53,6 @@ CANONICAL_CHAPTER_COUNTS = [
     4, 4, 5, 3, 6, 4, 3, 1, 13, 5,
     5, 3, 5, 1, 1, 1, 22,
 ]
-
-DEFAULT_CACHE_ZIP = PROJECT_ROOT / ".cache" / BIBLE_VERSIONS["net"]["cache_name"]
 
 BIBLE_CSS = """\
 body {
@@ -154,13 +104,13 @@ span.sc {
 """
 
 
-def download_usfm_zip(cache_path: Path, url: str = BIBLE_VERSIONS["net"]["url"]) -> bytes:
+def download_usfm_zip(cache_path: Path) -> bytes:
     if cache_path.exists():
         print(f"Using cached USFM archive: {cache_path}")
         return cache_path.read_bytes()
 
-    print(f"Downloading Bible USFM archive from {url} ...")
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (InkBible-Generator/1.0)"})
+    print(f"Downloading NET Bible USFM archive from {USFM_URL} ...")
+    req = urllib.request.Request(USFM_URL, headers={"User-Agent": "Mozilla/5.0 (InkBible-Generator/1.0)"})
     with urllib.request.urlopen(req, timeout=60) as resp:
         data = resp.read()
 
@@ -505,8 +455,7 @@ def build_embedded_cpp(usfm_zip_bytes: bytes, cpp_path: Path, force: bool = Fals
     )
 
 
-def build_bible_epub(usfm_zip_bytes: bytes, output_path: Path, version_key: str = "net"):
-    version_meta = BIBLE_VERSIONS.get(version_key, BIBLE_VERSIONS["net"])
+def build_bible_epub(usfm_zip_bytes: bytes, output_path: Path):
     canonical_books = load_canonical_usfm_books(usfm_zip_bytes)
 
     manifest_items = ['<item id="style" href="style.css" media-type="text/css"/>']
@@ -562,19 +511,15 @@ def build_bible_epub(usfm_zip_bytes: bytes, output_path: Path, version_key: str 
         # 5. OEBPS/content.opf
         manifest_xml = "\n    ".join(manifest_items)
         spine_xml = "\n    ".join(spine_items)
-        title_esc = html.escape(version_meta["title"])
-        creator_esc = html.escape(version_meta["creator"])
-        ident_esc = html.escape(version_meta["identifier"])
-        rights_esc = html.escape(version_meta["rights"])
         content_opf = (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<package version="2.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId">\n'
             '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
-            f"    <dc:title>{title_esc}</dc:title>\n"
-            f"    <dc:creator>{creator_esc}</dc:creator>\n"
+            "    <dc:title>NET Bible</dc:title>\n"
+            "    <dc:creator>Biblical Studies Press</dc:creator>\n"
             "    <dc:language>en</dc:language>\n"
-            f'    <dc:identifier id="BookId">{ident_esc}</dc:identifier>\n'
-            f"    <dc:rights>{rights_esc}</dc:rights>\n"
+            '    <dc:identifier id="BookId">ink-bible-net-v1</dc:identifier>\n'
+            "    <dc:rights>NET Bible® copyright © 1996-2016 Biblical Studies Press, L.L.C.</dc:rights>\n"
             "  </metadata>\n"
             "  <manifest>\n"
             f"    {manifest_xml}\n"
@@ -593,12 +538,12 @@ def build_bible_epub(usfm_zip_bytes: bytes, output_path: Path, version_key: str 
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">\n'
             "  <head>\n"
-            f'    <meta name="dtb:uid" content="{ident_esc}"/>\n'
+            '    <meta name="dtb:uid" content="ink-bible-net-v1"/>\n'
             '    <meta name="dtb:depth" content="1"/>\n'
             '    <meta name="dtb:totalPageCount" content="0"/>\n'
             '    <meta name="dtb:maxPageNumber" content="0"/>\n'
             "  </head>\n"
-            f"  <docTitle><text>{title_esc}</text></docTitle>\n"
+            "  <docTitle><text>NET Bible</text></docTitle>\n"
             "  <navMap>\n"
             f"{nav_xml}\n"
             "  </navMap>\n"
@@ -608,32 +553,25 @@ def build_bible_epub(usfm_zip_bytes: bytes, output_path: Path, version_key: str 
 
     size_mb = output_path.stat().st_size / (1024 * 1024)
     print(
-        f"Generated {output_path} [{version_meta['title']}] ({size_mb:.2f} MB): "
+        f"Generated {output_path} ({size_mb:.2f} MB): "
         f"66 books, {total_chapters} chapters, {total_verses} verses."
     )
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate Bible EPUB or embedded C++ data for Ink Bible firmware.")
-    parser.add_argument(
-        "-v",
-        "--version",
-        choices=list(BIBLE_VERSIONS.keys()),
-        default="net",
-        help="Bible translation preset to generate (default: net)",
-    )
+    parser = argparse.ArgumentParser(description="Generate NET Bible EPUB or embedded C++ data for Ink Bible firmware.")
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        default=None,
-        help=f"Output EPUB file path (default: {DEFAULT_OUTPUT} for net, or <version>.epub)",
+        default=DEFAULT_OUTPUT,
+        help=f"Output EPUB file path (default: {DEFAULT_OUTPUT})",
     )
     parser.add_argument(
         "--cache-zip",
         type=Path,
-        default=None,
-        help="Local cache path for USFM zip archive",
+        default=DEFAULT_CACHE_ZIP,
+        help=f"Local cache path for engnet_usfm.zip (default: {DEFAULT_CACHE_ZIP})",
     )
     parser.add_argument(
         "--cpp-out",
@@ -644,19 +582,15 @@ def main():
     parser.add_argument(
         "--no-epub",
         action="store_true",
-        help="Skip generating EPUB when --cpp-out is used",
+        help="Skip generating bible.epub when --cpp-out is used",
     )
     args = parser.parse_args()
 
-    version_meta = BIBLE_VERSIONS[args.version]
-    cache_zip = args.cache_zip or (PROJECT_ROOT / ".cache" / version_meta["cache_name"])
-    output_epub = args.output or (DEFAULT_OUTPUT if args.version == "net" else (PROJECT_ROOT / f"{args.version}.epub"))
-
-    usfm_bytes = download_usfm_zip(cache_zip, version_meta["url"])
+    usfm_bytes = download_usfm_zip(args.cache_zip)
     if args.cpp_out:
         build_embedded_cpp(usfm_bytes, args.cpp_out, force=True)
     if not args.no_epub:
-        build_bible_epub(usfm_bytes, output_epub, args.version)
+        build_bible_epub(usfm_bytes, args.output)
 
 
 if __name__ == "__main__":
@@ -664,5 +598,5 @@ if __name__ == "__main__":
 else:
     if "Import" in globals():
         Import("env")
-        usfm_bytes = download_usfm_zip(DEFAULT_CACHE_ZIP, BIBLE_VERSIONS["net"]["url"])
+        usfm_bytes = download_usfm_zip(DEFAULT_CACHE_ZIP)
         build_embedded_cpp(usfm_bytes, DEFAULT_CPP_OUTPUT, force=False)
