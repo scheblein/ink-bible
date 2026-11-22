@@ -131,8 +131,7 @@ void FileBrowserActivity::loadFiles() {
         if (FsHelpers::checkFileExtension(filename, ".bin")) {
           files.emplace_back(filename);
         }
-      } else if (FsHelpers::hasReflowableBookExtension(filename) || FsHelpers::hasXtcExtension(filename) ||
-                 FsHelpers::hasImageExtension(filename)) {
+      } else if (FsHelpers::hasReflowableBookExtension(filename) || FsHelpers::hasImageExtension(filename)) {
         files.emplace_back(filename);
       }
     }

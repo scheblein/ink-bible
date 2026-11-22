@@ -30,7 +30,6 @@
 #include "ClippingStore.h"
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
-#include "DictionaryWordSelectActivity.h"
 #include "EpubReaderBookmarksActivity.h"
 #include "EpubReaderChapterSelectionActivity.h"
 #include "EpubReaderClippingListActivity.h"
@@ -38,7 +37,6 @@
 #include "EpubReaderPercentSelectionActivity.h"
 #include "EpubReaderUtils.h"
 #include "KOReaderCredentialStore.h"
-#include "KOReaderSyncActivity.h"
 #include "MappedInputManager.h"
 #include "ProgressMapper.h"
 #include "QrDisplayActivity.h"
@@ -447,15 +445,7 @@ void EpubReaderActivity::backgroundBuildTick() {
   }
 }
 
-void EpubReaderActivity::openDictionaryWordSelect() {
-  if (SETTINGS.dictionaryName[0] == '\0') {
-    showDictionaryMessage = true;
-    dictionaryMessageTime = millis();
-    requestUpdate();
-    return;
-  }
-  startClipSelection(-1, -1, ClipSelectionActivity::Mode::Lookup);
-}
+void EpubReaderActivity::openDictionaryWordSelect() {}
 
 void EpubReaderActivity::startClipSelection(const int initialX, const int initialY,
                                             const ClipSelectionActivity::Mode mode) {
@@ -539,25 +529,7 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
       return;
     }
     if (clipping.action == ClippingResult::Action::Lookup) {
-      auto page = section ? section->loadPage(section->currentPage) : nullptr;
-      if (!page) {
-        LOG_ERR("CLIP", "Failed to load lookup page");
-        requestUpdate();
-        return;
-      }
-      int top, right, bottom, left;
-      renderer.getOrientedViewableTRBL(&top, &right, &bottom, &left);
-      auto lookup = makeUniqueNoThrow<DictionaryWordSelectActivity>(renderer, mappedInput, std::move(page),
-                                                                    left + SETTINGS.screenMargin,
-                                                                    top + SETTINGS.screenMargin, clipping.text);
-      if (!lookup) {
-        LOG_ERR("CLIP", "OOM: dictionary lookup activity");
-        requestUpdate();
-        return;
-      }
-      startActivityForResult(std::move(lookup), [this](const ActivityResult& result) {
-        if (!result.isCancelled && !mappedInput.hasTouch()) openDictionaryWordSelect();
-      });
+      requestUpdate();
       return;
     }
     const uint16_t paragraphIndex =
@@ -1337,64 +1309,7 @@ unsigned long EpubReaderActivity::confirmLongPressThreshold() const {
   }
 }
 
-bool EpubReaderActivity::launchKOReaderSync() {
-  flushReaderSession();
-
-  // Without a KOReader server the sync activity only brings the device online
-  // and drains that outbox; a failed join exits back to the reader with the
-  // events still queued.
-  if (!KOREADER_STORE.hasCredentials()) {
-    activityManager.replaceActivity(std::make_unique<KOReaderSyncActivity>(
-        renderer, mappedInput, epub->getPath(), getCurrentPosition(), SavedProgressPosition{}, "",
-        /*pluginEventsOnly=*/true));
-    return true;
-  }
-
-  RenderLock renderLock;
-
-  const int currentPage = section ? section->currentPage : nextPageNumber;
-  const int totalPages = section ? section->estimatedTotalPages() : cachedChapterTotalPageCount;
-
-  CrossPointPosition localPos = getCurrentPosition();
-  SavedProgressPosition localKoPos;
-  const int tocIdx = epub->getTocIndexForSpineIndex(currentSpineIndex);
-  std::string localChapterName = (tocIdx >= 0) ? epub->getTocItem(tocIdx).title : "";
-  const std::string savedEpubPath = epub->getPath();
-
-  if (!saveProgress(currentSpineIndex, currentPage, totalPages)) {
-    LOG_ERR("KOSync", "Aborting sync because current progress could not be saved");
-    pendingSyncSaveError = true;
-    requestUpdate();
-    return true;
-  }
-
-  LOG_DBG("KOSync", "Releasing epub for sync (heap before: %u)", (unsigned)ESP.getFreeHeap());
-  {
-    if (section) {
-      nextPageNumber = section->currentPage;
-    }
-    discardOverlayPage();
-    ImageBlock::releaseRenderCache();
-    ImageBlock::setExtractor(nullptr, nullptr);
-    section.reset();
-    if (auto* fcm = renderer.getFontCacheManager()) {
-      fcm->releaseSdFontCaches();
-    }
-    // No rendering may run while the chapter mapper borrows the framebuffer.
-    {
-      GfxRenderer::FrameBufferLoan loan(renderer);
-      localKoPos = ProgressMapper::toSavedProgress(epub, localPos);
-    }
-    // The destructor can no longer save the back-stack once epub is gone.
-    if (footnoteDepth > 0) saveLinkStack();
-    epub.reset();
-  }
-  LOG_DBG("KOSync", "Epub released (heap after: %u)", (unsigned)ESP.getFreeHeap());
-
-  activityManager.replaceActivity(std::make_unique<KOReaderSyncActivity>(
-      renderer, mappedInput, savedEpubPath, localPos, std::move(localKoPos), std::move(localChapterName)));
-  return true;
-}
+bool EpubReaderActivity::launchKOReaderSync() { return false; }
 
 void EpubReaderActivity::applyInitialOrientation() {
   ReaderActivity::applyInitialOrientation();
