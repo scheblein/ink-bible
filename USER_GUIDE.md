@@ -397,7 +397,7 @@ For web-based Wi-Fi network management, see [Web Settings (Wi-Fi + OPDS)](#366-w
 While in **File Transfer** mode, the web settings page includes management cards for both **Wi-Fi Networks** and **OPDS Servers**.
 
 1. On device: open **File Transfer** and connect through **Join a Network** or **Create Hotspot**.
-2. In a browser, open `http://<device-ip>/settings` or `http://crosspoint.local`.
+2. In a browser, open `http://<device-ip>/settings` or `http://inkbible.local`.
 3. In **Wi-Fi Networks**, add, edit, or delete saved network entries (SSID + optional password).
 4. In **OPDS Servers**, add, edit, or delete OPDS catalogs.
 
@@ -696,7 +696,8 @@ The list menu remembers the selected entry while the book stays open. If that en
 
 Available options include:
 
-- **Go to Passage** – Open the 3-stage **Book → Chapter → Verse** passage selector for `/bible.epub`, or the table of contents for other EPUBs (see [Passage & Chapter Selection](#51-chapter-selection) below).
+- **Go to Passage** – Open the 3-stage **Book → Chapter → Verse** passage selector for `/bible.epub` (and other 1,189-chapter Bible EPUBs), or the table of contents for other EPUBs (see [Passage & Chapter Selection](#51-chapter-selection) below).
+- **Bible Version** – Switch between the built-in NET Bible and any `.epub` Bibles placed in `/bibles/` or `/` on the SD card while staying on your current Book and Chapter.
 - **Text Settings** – Adjust font family, font size, line spacing, margins, alignment, and hyphenation with live preview.
 - **Links and Footnotes** – Select an internal link on the current page. This option appears when the page contains links.
 - **Bluetooth Page Turner** – Toggle Bluetooth for the saved remote. This entry appears after pairing a remote in **Settings → Connectivity → Bluetooth Page Turner** and disappears if that selected remote is forgotten.

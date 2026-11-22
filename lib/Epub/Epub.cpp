@@ -480,7 +480,25 @@ bool Epub::load(const bool buildIfMissing, const bool skipLoadingCss) {
   }
 
   // Try to load existing cache first
-  if (bookMetadataCache->load()) {
+  bool cacheLoaded = bookMetadataCache->load();
+  if (cacheLoaded && filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+    size_t expectedTotalSize = 0;
+    for (int i = 0; i < BibleCanon::TOTAL_CHAPTER_COUNT; ++i) {
+      expectedTotalSize += NetBibleData::CHAPTER_UNCOMPRESSED_SIZES[i];
+    }
+    if (bookMetadataCache->getSpineCount() != BibleCanon::TOTAL_CHAPTER_COUNT ||
+        bookMetadataCache->getCumulativeSize(BibleCanon::TOTAL_CHAPTER_COUNT - 1) != expectedTotalSize) {
+      LOG_DBG("EBP", "Embedded flash NET Bible cache outdated; rebuilding book.bin and clearing sections");
+      Storage.removeDir((cachePath + "/sections").c_str());
+      bookMetadataCache = makeUniqueNoThrow<BookMetadataCache>(cachePath);
+      if (!bookMetadataCache) {
+        LOG_ERR("EBP", "OOM: embedded Bible metadata cache");
+        return false;
+      }
+      cacheLoaded = false;
+    }
+  }
+  if (cacheLoaded) {
     if (Txt::isTxtOrMd(filepath)) {
       if (!Txt::validateCache(filepath, cachePath, bookMetadataCache->getCumulativeSize(0))) {
         LOG_DBG("EBP", "TXT/MD cache invalid or outdated: %s", filepath.c_str());

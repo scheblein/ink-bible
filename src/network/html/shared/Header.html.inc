@@ -8,7 +8,7 @@
           alt=""
           width="32"
           height="32"
-        />CrossPoint <span class="brand-reader">Reader</span></a
+        />Ink <span class="brand-reader">Bible</span></a
       >
     </h1>
     <nav class="nav-links desktop-nav">

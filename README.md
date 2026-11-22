@@ -9,11 +9,11 @@ InkBible is an **all-in-one dedicated handheld NET Bible (New English Translatio
 The build script (`scripts/generate_net_bible_epub.py`) automatically compiles the NET Bible USFM text into flash-resident compressed chapter blocks (`lib/BibleCanon/NetBibleData.generated.cpp`, ~1.56 MB in `.rodata`) during `pio run -e default`:
 
 - **No manual `bible.epub` copy required**: Simply flash `.pio/build/default/firmware.bin` to your X3/X4 (with an SD card inserted for layout cache, bookmarks, and clippings) and power it on — the firmware streams the NET Bible directly from internal flash! (If you ever place a custom `/bible.epub` on the SD card, it takes precedence over the built-in flash text.)
-- **Optional standalone EPUB**: You can also generate a standalone `bible.epub` at any time with `python3 scripts/generate_net_bible_epub.py -o bible.epub`.
+- **Multi-Version Bible Generator & Footnotes**: Generate standalone 1,189-chapter Bible EPUBs (with linked USFM translator footnotes viewable via **Links and Footnotes**) for the SD card (`/bibles/*.epub` or `/`) using `python3 scripts/generate_net_bible_epub.py -v <net|bsb|web|kjv|asv> -o bsb.epub`, and switch translations on-device via **Reader Menu → Bible Version** while preserving your current Book & Chapter.
 - **Direct-to-Bible Startup**: On power-on or wake, the device opens your last reading position (or the built-in NET Bible at Genesis 1 automatically). Holding **Back** during startup opens the SD Card File Browser at `/`.
 - **Fast Passage Picker (`Book → Chapter → Verse`)**: While reading, press **Back** (short press) or open the Reader Menu (**Confirm**) and select **Go to Passage** to pick any of the 66 canonical Books, its Chapter, and its exact Verse. Pressing **Back** inside the picker steps back from `Verse → Chapter → Book → Reading Page`.
 - **Chapter Skip**: Long-pressing Next/Previous Page (when **Page turn long press** is set to **Chapter skip**) jumps directly to the next or previous Bible chapter.
-- **Reader Menu Access**: Press **Confirm** to access **Go to Passage**, **Text Settings**, **Add/Remove Bookmark**, **Bookmarks**, **Create/View Clippings**, **Settings**, and **File Transfer**.
+- **Reader Menu Access**: Press **Confirm** to access **Go to Passage**, **Bible Version**, **Links and Footnotes**, **Text Settings**, **Add/Remove Bookmark**, **Bookmarks**, **Create/View Clippings**, **Settings**, and **File Transfer**.
 
 ### Now running on:
 

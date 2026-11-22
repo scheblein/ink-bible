@@ -152,7 +152,9 @@ class EpubReaderActivity final : public ReaderActivity {
   bool makeRoomForChapterBuild();
   static constexpr uint32_t BUILD_ROOM_WAIT_MS = 5000;
   static constexpr uint32_t BUILD_ROOM_STEP_MS = 50;
-  bool inputOverPage() const override { return overlay != Overlay::None || ReaderActivity::inputOverPage(); }
+  bool inputOverPage() const override {
+    return overlay != Overlay::None || loadFailurePopup.isActive() || ReaderActivity::inputOverPage();
+  }
   // "Connecting Bluetooth…" or "Bluetooth failed" in place of the status bar title.
   mutable LinkNoteTitle linkNoteTitle;
   static constexpr size_t RENDER_MIN_FREE_HEAP = 24 * 1024;
@@ -198,6 +200,7 @@ class EpubReaderActivity final : public ReaderActivity {
   std::string moreRowValue(int row) const;
   void activateMoreRow(int row);
   void openChapterSelection(bool reopenMenuOnCancel);
+  void openBibleVersionSelection();
   void openFootnoteSelect(bool reopenMenuOnCancel);
   void openDictionaryWordSelect();
   void startClipSelection(int initialX = -1, int initialY = -1,

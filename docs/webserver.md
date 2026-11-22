@@ -46,7 +46,7 @@ After connection, the reader shows:
 - The connected SSID
 - A QR code for the web URL
 - The direct IP URL, for example `http://192.168.1.102/`
-- The mDNS fallback URL, usually `http://crosspoint.local/`
+- The mDNS fallback URL, usually `http://inkbible.local/`
 
 Use either URL from a phone, tablet, or computer on the same network.
 
@@ -56,10 +56,10 @@ Use either URL from a phone, tablet, or computer on the same network.
 2. Connect your phone or computer to the open Wi-Fi network:
 
 ```text
-CrossPoint-Reader
+Ink-Bible
 ```
 
-3. Open the URL shown on the reader. `http://crosspoint.local/` is preferred
+3. Open the URL shown on the reader. `http://inkbible.local/` is preferred
    when supported; the fallback IP is typically `http://192.168.4.1/`. Some
    phones and computers open the reader's home page automatically after
    joining.
