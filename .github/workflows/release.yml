@@ -72,7 +72,7 @@ jobs:
             fi
           }
 
-          if release_exists "$version" || release_exists "v${version}"; then
+          if release_exists "$version"; then
             echo "Release for version $version already exists; skipping auto-release."
             echo "should_build=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -123,12 +123,11 @@ jobs:
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           IS_PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
-          version="${RELEASE_TAG#v}"
           configured_version="$(sed -n 's/^version = //p' platformio.ini | head -n1)"
           if [ "$IS_PRERELEASE" = "true" ]; then
-            test "$version" = "${configured_version}rc"
+            test "$RELEASE_TAG" = "${configured_version}rc"
           else
-            test "$version" = "$configured_version"
+            test "$RELEASE_TAG" = "$configured_version"
           fi
 
       - uses: actions/setup-python@v6
@@ -183,8 +182,7 @@ jobs:
           PIO_ENV: ${{ needs.prepare.outputs.prerelease == 'true' && matrix.rc_env || matrix.release_env }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          version="${RELEASE_TAG#v}"
-          asset="ink-bible-${version}-${{ matrix.device }}.bin"
+          asset="ink-bible-${RELEASE_TAG}-${{ matrix.device }}.bin"
           cp ".pio/build/${PIO_ENV}/firmware.bin" "$asset"
           echo "name=$asset" >> "$GITHUB_OUTPUT"
 
@@ -219,9 +217,8 @@ jobs:
           CREATE_RELEASE: ${{ needs.prepare.outputs.create_release }}
         run: |
           set -euo pipefail
-          version="${RELEASE_TAG#v}"
           for device in x3-x4 x4pro x4c; do
-            test -f "dist/ink-bible-${version}-${device}.bin"
+            test -f "dist/ink-bible-${RELEASE_TAG}-${device}.bin"
           done
           test "$(find dist -maxdepth 1 -type f -name 'ink-bible-*.bin' | wc -l)" -eq 3
           if [ "$CREATE_RELEASE" = "true" ]; then
