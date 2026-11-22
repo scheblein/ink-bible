@@ -34,12 +34,10 @@
 #include "EpubReaderChapterSelectionActivity.h"
 #include "EpubReaderClippingListActivity.h"
 #include "EpubReaderFootnoteSelectActivity.h"
-#include "EpubReaderPercentSelectionActivity.h"
 #include "EpubReaderUtils.h"
 #include "KOReaderCredentialStore.h"
 #include "MappedInputManager.h"
 #include "ProgressMapper.h"
-#include "QrDisplayActivity.h"
 #include "ReaderActivity.h"
 #include "ReaderFontSizes.h"
 #include "ReaderLineSpacing.h"
@@ -1199,35 +1197,13 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
     case EpubReaderMenuActivity::MenuAction::FRONTLIGHT:
       // Handled in-place by EpubReaderMenuActivity using the live frontlight HAL.
       break;
-    case EpubReaderMenuActivity::MenuAction::GO_TO_PERCENT: {
-      const int initialPercent = bookPercentFor(chapterPosition());
-      startActivityForResult(
-          std::make_unique<EpubReaderPercentSelectionActivity>(renderer, mappedInput, initialPercent),
-          [this](const ActivityResult& result) {
-            if (result.isCancelled) {
-              openReaderMenu();
-            } else {
-              jumpToPercent(std::get<PercentResult>(result.data).percent);
-            }
-          });
+    case EpubReaderMenuActivity::MenuAction::GO_TO_PERCENT:
+    case EpubReaderMenuActivity::MenuAction::DICTIONARY:
+    case EpubReaderMenuActivity::MenuAction::DISPLAY_QR:
+    case EpubReaderMenuActivity::MenuAction::DELETE_CACHE:
+    case EpubReaderMenuActivity::MenuAction::SCREENSHOT:
+    case EpubReaderMenuActivity::MenuAction::SYNC:
       break;
-    }
-    case EpubReaderMenuActivity::MenuAction::DICTIONARY: {
-      openDictionaryWordSelect();
-      break;
-    }
-    case EpubReaderMenuActivity::MenuAction::DISPLAY_QR: {
-      if (section && section->currentPage >= 0 && section->currentPage < section->pageCount) {
-        std::string fullText = section->getTextFromSectionFile();
-        if (!fullText.empty()) {
-          startActivityForResult(std::make_unique<QrDisplayActivity>(renderer, mappedInput, fullText),
-                                 [this](const ActivityResult&) { openReaderMenu(); });
-          break;
-        }
-      }
-      requestUpdate();
-      break;
-    }
     case EpubReaderMenuActivity::MenuAction::GO_HOME: {
       onGoHome();
       return;
@@ -1239,36 +1215,6 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
     case EpubReaderMenuActivity::MenuAction::SETTINGS_MENU: {
       activityManager.goToSettings();
       return;
-    }
-    case EpubReaderMenuActivity::MenuAction::DELETE_CACHE: {
-      {
-        RenderLock lock;
-        if (epub && section) {
-          uint16_t backupSpine = currentSpineIndex;
-          uint16_t backupPage = section->currentPage;
-          uint16_t backupPageCount = section->pageCount;
-          section.reset();
-          epub->clearCache();
-          epub->setupCacheDir();
-          if (!saveProgress(backupSpine, backupPage, backupPageCount)) {
-            LOG_ERR("ERS", "Failed to save progress before cache clear");
-          }
-        }
-      }
-      onGoHome();
-      return;
-    }
-    case EpubReaderMenuActivity::MenuAction::SCREENSHOT: {
-      {
-        RenderLock lock;
-        pendingScreenshot = true;
-      }
-      requestUpdate();
-      break;
-    }
-    case EpubReaderMenuActivity::MenuAction::SYNC: {
-      launchKOReaderSync();
-      break;
     }
     case EpubReaderMenuActivity::MenuAction::BOOKMARKS: {
       startActivityForResult(

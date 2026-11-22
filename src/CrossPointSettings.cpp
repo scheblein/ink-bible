@@ -107,6 +107,7 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   }
   // The displayed option list varies by board, so this setting uses a dynamic
   // display-index mapping and is skipped by the generic persistence loop.
+  doc["sleepScreen"] = sleepScreen;
   doc["longPressMenuFunction"] = longPressMenuFunction;
   doc["shortPwrBtn"] = shortPwrBtn;
 
@@ -257,6 +258,7 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   fontFamily = NOTOSANS;
   // These controls use board-specific display-index mappings and are skipped by
   // the generic settings loop. Persisted action IDs remain stable across boards.
+  sleepScreen = clamp(doc["sleepScreen"] | (uint8_t)DARK, (uint8_t)SLEEP_SCREEN_MODE_COUNT, (uint8_t)DARK);
   longPressMenuFunction = clamp(doc["longPressMenuFunction"] | (uint8_t)LP_MENU_DISABLED,
                                 (uint8_t)LONG_PRESS_MENU_FUNCTION_COUNT, (uint8_t)LP_MENU_DISABLED);
   shortPwrBtn = clamp(doc["shortPwrBtn"] | (uint8_t)IGNORE, (uint8_t)SHORT_PWRBTN_COUNT, (uint8_t)IGNORE);

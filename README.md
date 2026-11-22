@@ -27,7 +27,7 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
   - Optional Tilt Page Turn for X3 / IMU devices (**Settings → Controls → Tilt Page Turn**).
   - Bluetooth page turner remote support (**Settings → Connectivity → Bluetooth Page Turner**).
 - **Wireless File Transfer & OTA Updates**:
-  - Built-in Wi-Fi Web UI (**Reader Menu → File Transfer**, hotspot SSID `Ink-Bible` at `http://inkbible.local/` or station mode) for managing clippings, screenshots, settings, and SD fonts.
+  - Built-in Wi-Fi Web UI (**Settings → Connectivity → File Transfer**, hotspot SSID `Ink-Bible` at `http://inkbible.local/` or station mode) for managing clippings, settings, and SD fonts.
   - Over-the-air (OTA) firmware updates from [GitHub Releases](https://github.com/scheblein/ink-bible/releases) or SD card `.bin` updates.
 
 ---

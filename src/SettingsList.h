@@ -183,6 +183,41 @@ inline SettingInfo buildDictionarySetting(const std::vector<DictionaryEntry>& di
   return s;
 }
 
+struct SleepScreenOption {
+  StrId label;
+  uint8_t value;
+};
+
+inline constexpr SleepScreenOption SLEEP_SCREEN_OPTIONS[] = {
+    {StrId::STR_DARK, CrossPointSettings::DARK},
+    {StrId::STR_LIGHT, CrossPointSettings::LIGHT},
+    {StrId::STR_CUSTOM, CrossPointSettings::CUSTOM},
+    {StrId::STR_NONE_OPT, CrossPointSettings::BLANK},
+    {StrId::STR_QUICK_RESUME, CrossPointSettings::QUICK_RESUME},
+    {StrId::STR_TRANSPARENT, CrossPointSettings::TRANSPARENT_CUSTOM},
+};
+
+inline SettingInfo buildSleepScreenSetting() {
+  std::vector<StrId> labels;
+  labels.reserve(sizeof(SLEEP_SCREEN_OPTIONS) / sizeof(SLEEP_SCREEN_OPTIONS[0]));
+  for (const auto& opt : SLEEP_SCREEN_OPTIONS) labels.push_back(opt.label);
+  return SettingInfo::DynamicEnum(
+      StrId::STR_SLEEP_SCREEN, std::move(labels),
+      []() -> uint8_t {
+        constexpr size_t kCount = sizeof(SLEEP_SCREEN_OPTIONS) / sizeof(SLEEP_SCREEN_OPTIONS[0]);
+        for (size_t i = 0; i < kCount; ++i) {
+          if (SLEEP_SCREEN_OPTIONS[i].value == SETTINGS.sleepScreen) return static_cast<uint8_t>(i);
+        }
+        return 0;  // Dark
+      },
+      [](uint8_t displayValue) {
+        constexpr size_t kCount = sizeof(SLEEP_SCREEN_OPTIONS) / sizeof(SLEEP_SCREEN_OPTIONS[0]);
+        SETTINGS.sleepScreen = displayValue < kCount ? SLEEP_SCREEN_OPTIONS[displayValue].value
+                                                     : static_cast<uint8_t>(CrossPointSettings::DARK);
+      },
+      "sleepScreen", StrId::STR_CAT_DISPLAY);
+}
+
 struct LongPressMenuOption {
   StrId label;
   uint8_t value;

@@ -6,11 +6,9 @@
 #include <I18n.h>
 
 #include "CrossPointSettings.h"
-#include "KOReaderCredentialStore.h"
 #include "MappedInputManager.h"
 #include "ReaderUtils.h"
 #include "components/UITheme.h"
-#include "util/PluginEvents.h"
 #include "util/SlideSwitch.h"
 
 namespace fui = freeink::ui;
@@ -87,14 +85,8 @@ void EpubReaderMenuActivity::buildMenuItems(std::vector<MenuItem>& items, const 
     items.push_back({MenuAction::BLUETOOTH, StrId::STR_BT_PAGE_TURNER});
   }
   items.push_back({MenuAction::ROTATE_SCREEN, StrId::STR_ORIENTATION});
-  items.push_back({MenuAction::AUTO_PAGE_TURN, StrId::STR_AUTO_TURN_PAGES_PER_MIN});
-  items.push_back({MenuAction::GO_TO_PERCENT, StrId::STR_GO_TO_PERCENT});
   items.push_back({MenuAction::TEXT_SETTINGS, StrId::STR_TEXT_SETTINGS});
   items.push_back({MenuAction::SETTINGS_MENU, StrId::STR_SETTINGS_TITLE});
-  items.push_back({MenuAction::FILE_TRANSFER, StrId::STR_FILE_TRANSFER});
-  items.push_back({MenuAction::SCREENSHOT, StrId::STR_SCREENSHOT_BUTTON});
-  items.push_back({MenuAction::DISPLAY_QR, StrId::STR_DISPLAY_QR});
-  items.push_back({MenuAction::DELETE_CACHE, StrId::STR_DELETE_CACHE});
 }
 
 void EpubReaderMenuActivity::toggleBluetooth() {
@@ -137,16 +129,6 @@ void EpubReaderMenuActivity::activateIndex(const int index) {
                        ReaderUtils::applyOrientation(renderer, pendingOrientation);
                        app.setDevice(uiTarget.deviceContext());  // hit rects follow the new frame
                        requestUpdate(true);
-                     });
-    requestUpdate();
-    return;
-  }
-
-  if (selectedAction == MenuAction::AUTO_PAGE_TURN) {
-    optionPopup.show(I18N.get(StrId::STR_AUTO_TURN_PAGES_PER_MIN), pageTurnLabels.data(),
-                     static_cast<int>(pageTurnLabels.size()), selectedPageTurnOption, [this](int idx) {
-                       selectedPageTurnOption = idx;
-                       requestUpdate();
                      });
     requestUpdate();
     return;
@@ -223,8 +205,6 @@ void EpubReaderMenuActivity::buildScreen(UiScreen& screen) {
     const auto action = menuItems[i].action;
     if (action == MenuAction::ROTATE_SCREEN) {
       menuRowItems[i].value = I18N.get(orientationLabels[pendingOrientation]);
-    } else if (action == MenuAction::AUTO_PAGE_TURN) {
-      menuRowItems[i].value = pageTurnLabels[selectedPageTurnOption];
     } else if (action == MenuAction::NIGHT_MODE) {
       GUI.setCheckboxRow(menuRowItems[i], SETTINGS.screenInverted);
     } else if (action == MenuAction::BLUETOOTH) {

@@ -123,6 +123,7 @@ void SettingsActivity::rebuildSettings() {
   addAction(SettingsSection::Reader, StrId::STR_CUSTOMISE_STATUS_BAR, SettingAction::CustomiseStatusBar);
   addAction(SettingsSection::Reader, StrId::STR_CLEAR_READING_CACHE, SettingAction::ClearCache);
 
+  addAction(SettingsSection::Network, StrId::STR_FILE_TRANSFER, SettingAction::FileTransfer);
   addAction(SettingsSection::Network, StrId::STR_WIFI_NETWORKS, SettingAction::Network);
   if (bleturner::status().compiledIn) {
     addAction(SettingsSection::Network, StrId::STR_BT_PAGE_TURNER, SettingAction::Bluetooth);
@@ -209,7 +210,7 @@ void SettingsActivity::toggleSelectedSetting() {
   }
 
   const auto& setting = settings[selectedSetting];
-  const bool sleepScreenChanged = setting.valuePtr == &CrossPointSettings::sleepScreen;
+  const bool sleepScreenChanged = setting.key && std::strcmp(setting.key, "sleepScreen") == 0;
   const bool quickResumeTimeoutChanged = setting.valuePtr == &CrossPointSettings::quickResumeSleepScreen;
 
   if (setting.nameId == StrId::STR_TIME_TO_SLEEP) {
@@ -302,6 +303,9 @@ void SettingsActivity::toggleSelectedSetting() {
       case SettingAction::Language:
       case SettingAction::Plugins:
         break;
+      case SettingAction::FileTransfer:
+        activityManager.goToFileTransfer();
+        return;
       case SettingAction::Network: {
         auto activity = makeUniqueNoThrow<WifiSelectionActivity>(renderer, mappedInput, false);
         if (!activity) {
