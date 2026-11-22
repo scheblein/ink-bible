@@ -117,6 +117,7 @@ class BookMetadataCache {
 
   // Post-processing to update mappings and sizes
   bool buildBookBin(const std::string& epubPath, const BookMetadata& metadata);
+  bool buildEmbeddedBibleBookBin(const BookMetadata& metadata, const uint16_t* chapterUncompressedSizes);
 
   // Reading phase (read mode)
   bool load();

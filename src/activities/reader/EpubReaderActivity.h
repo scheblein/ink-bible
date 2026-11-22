@@ -1,5 +1,6 @@
 #pragma once
 
+#include <BibleCanon.h>
 #include <Epub.h>
 #include <Epub/FootnoteEntry.h>
 #include <Epub/PageLink.h>
@@ -196,6 +197,7 @@ class EpubReaderActivity final : public ReaderActivity {
   std::string moreRowName(int row) const;
   std::string moreRowValue(int row) const;
   void activateMoreRow(int row);
+  void openChapterSelection(bool reopenMenuOnCancel);
   void openFootnoteSelect(bool reopenMenuOnCancel);
   void openDictionaryWordSelect();
   void startClipSelection(int initialX = -1, int initialY = -1,
@@ -257,6 +259,7 @@ class EpubReaderActivity final : public ReaderActivity {
   bool pageTurn(bool isForward) override;
   bool skipPages(int amount) override;
   bool remoteShortcut(bool readerMenu) override;
+  bool handleHomeGesture() override;
   bool isAtEndOfBook() const override;
   void onReturnFromEndOfBook() override;
 

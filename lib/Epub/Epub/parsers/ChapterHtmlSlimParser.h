@@ -201,8 +201,9 @@ class ChapterHtmlSlimParser {
   // anchors needs ~28 KB contiguous, and a failed allocation aborts).
   int completedPageCount = 0;
   std::deque<std::pair<std::string, uint16_t>> anchorData;
-  std::string pendingAnchorId;          // deferred until after previous text block is flushed
-  std::vector<std::string> tocAnchors;  // the list of anchors that are TOC chapter boundaries
+  std::string pendingAnchorId;                                    // deferred until after previous text block is flushed
+  std::vector<std::pair<int, std::string>> pendingInlineAnchors;  // <wordIndex, anchorId>
+  std::vector<std::string> tocAnchors;                            // the list of anchors that are TOC chapter boundaries
   uint16_t xpathParagraphIndex = 0;
   uint16_t xpathListItemIndex = 0;
   // Canonical reading-position counter: zero-based Unicode codepoints in visible

@@ -22,9 +22,9 @@ class NetworkModeSelectionActivity final : public UiListActivity {
   explicit NetworkModeSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
 #if FREEINK_CAP_USB_MSC
-  static constexpr int MENU_ITEM_COUNT = 4;
-#else
   static constexpr int MENU_ITEM_COUNT = 3;
+#else
+  static constexpr int MENU_ITEM_COUNT = 2;
 #endif
 
   void onModeSelected(NetworkMode mode);

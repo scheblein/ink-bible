@@ -1,5 +1,6 @@
 #include "ReaderActivity.h"
 
+#include <BibleCanon.h>
 #include <FontCacheManager.h>
 #include <FsHelpers.h>
 #include <HalStorage.h>
@@ -61,23 +62,23 @@ void ReaderActivity::onEnter() {
   // leak (free falls) from fragmentation (free stable, largest collapses).
   LOG_INF("MEM", "reader enter: free=%u max_block=%u", (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
 
-  if (!Storage.exists(bookPath.c_str())) {
+  if (bookPath != BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(bookPath.c_str())) {
     LOG_ERR("READER", "File does not exist: %s", bookPath.c_str());
-    finish();
+    activityManager.goToFileBrowser("/");
     return;
   }
 
-  // Clear remembered book after opening it
-  if (!APP_STATE.openEpubPath.empty()) {
-    APP_STATE.openEpubPath.clear();
-    APP_STATE.saveToFile();
-  }
+  // Track the load attempt before loadBook() so a crash or failure prevents a
+  // boot/goHome retry loop until the first page renders.
+  APP_STATE.openEpubPath.clear();
+  APP_STATE.readerActivityLoadCount++;
+  APP_STATE.saveToFile();
 
   sdFontSystem.ensureLoaded(renderer);
   applyInitialOrientation();
 
   if (!loadBook()) {
-    if (!handleLoadFailure()) finish();
+    if (!handleLoadFailure()) activityManager.goToFileBrowser("/");
     return;
   }
 
@@ -88,6 +89,7 @@ void ReaderActivity::rememberBookOnceRendered() {
   if (bookRemembered || !pageRendered.load(std::memory_order_acquire)) return;
   bookRemembered = true;
   APP_STATE.openEpubPath = bookPath;
+  APP_STATE.readerActivityLoadCount = 0;
   APP_STATE.saveToFile();
   RECENT_BOOKS.addBook(bookPath, getBookTitle(), getBookAuthor(), getBookThumbBmpPath());
   const pluginevents::Var openVars[] = {{"book", bookPath.c_str()}};
@@ -119,8 +121,6 @@ void ReaderActivity::onExit() {
   }
 
   renderer.setOrientation(GfxRenderer::Orientation::Portrait);
-  APP_STATE.readerActivityLoadCount = 0;
-  APP_STATE.saveToFile();
 
   endOfBookOptions.reset();
   endOfBookOptionsReady.store(false, std::memory_order_release);

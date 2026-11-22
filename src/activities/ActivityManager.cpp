@@ -1,5 +1,6 @@
 #include "ActivityManager.h"
 
+#include <BibleCanon.h>
 #include <BlePageTurner.h>
 #include <BoardConfig.h>
 #include <FontCacheManager.h>
@@ -13,6 +14,7 @@
 
 #include "Activity.h"
 #include "CrossPointSettings.h"
+#include "CrossPointState.h"
 #include "HapticFeedback.h"
 #include "OpdsServerStore.h"
 #include "boot_sleep/BootActivity.h"
@@ -359,21 +361,21 @@ void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::
 }
 
 void ActivityManager::goHome(HomeMenuItem initialMenuItem, bool cleanInitialRefresh) {
-  if (initialMenuItem == HomeMenuItem::NONE && currentActivity) {
-    const auto& activityName = currentActivity->name;
-    if (activityName == "FileBrowser") {
-      initialMenuItem = HomeMenuItem::FILE_BROWSER;
-    } else if (activityName == "Library") {
-      initialMenuItem = HomeMenuItem::LIBRARY;
-    } else if (activityName == "OpdsBookBrowser" || activityName == "PluginCatalog") {
-      initialMenuItem = HomeMenuItem::OPDS_BROWSER;
-    } else if (activityName == "CrossPointWebServer") {
-      initialMenuItem = HomeMenuItem::FILE_TRANSFER;
-    } else if (activityName == "Settings" || activityName == "SettingsList") {
-      initialMenuItem = HomeMenuItem::SETTINGS_MENU;
-    }
+  (void)initialMenuItem;
+  if (!APP_STATE.openEpubPath.empty() && (APP_STATE.openEpubPath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH ||
+                                          Storage.exists(APP_STATE.openEpubPath.c_str()))) {
+    goToReader(APP_STATE.openEpubPath, !cleanInitialRefresh);
+    return;
   }
-  replaceActivity(std::make_unique<HomeActivity>(renderer, mappedInput, initialMenuItem, cleanInitialRefresh));
+  if (APP_STATE.readerActivityLoadCount == 0) {
+    goToReader(BibleCanon::DEFAULT_BIBLE_EPUB_PATH, !cleanInitialRefresh);
+    return;
+  }
+  if (currentActivity && currentActivity->name == "FileBrowser") {
+    requestUpdate();
+    return;
+  }
+  goToFileBrowser("/");
 }
 void ActivityManager::goToCrashReport() { replaceActivity(std::make_unique<CrashActivity>(renderer, mappedInput)); }
 

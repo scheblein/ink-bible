@@ -7,8 +7,20 @@
 #include "activities/UiListActivity.h"
 
 class EpubReaderChapterSelectionActivity final : public UiListActivity {
+  enum class BibleStage : uint8_t { Book, Chapter, Verse };
+
   std::shared_ptr<Epub> epub;
   int currentTocIndex = 0;
+  bool bibleMode = false;
+  BibleStage bibleStage = BibleStage::Book;
+  int selectedBookIndex = 0;
+  int selectedChapterNumber = 1;
+  int initialChapterNumber = 1;
+
+  // Scratch buffers for rowProvider in Bible mode (only one row is formatted at a time).
+  char rowLabelBuf[32]{};
+  char rowValueBuf[16]{};
+  static void provideBibleRow(void* ctx, uint16_t index, freeink::ui::ListItem& item);
 
   // Windowed row buffers: TOC entries are SD-backed (BookMetadataCache LUT
   // reads), so only the rows around the viewport are materialized. A
@@ -25,12 +37,12 @@ class EpubReaderChapterSelectionActivity final : public UiListActivity {
   int windowCount = 0;
   void refreshTocWindow(int start);
 
-  // Total TOC items count
-  int listCount() const override { return epub ? epub->getTocItemsCount() : 0; }
+  // Total items count for the active stage / TOC
+  int listCount() const override;
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
-  // Back cancels with a result and Confirm activates on RELEASE here, and a
-  // missing epub swallows everything past Back.
+  // Back cancels with a result (or steps back a stage in Bible mode) and
+  // Confirm activates on RELEASE here, and a missing epub swallows everything past Back.
   bool handleButtons() override;
   // Header is drawn inside the safe area (not full-width like the base).
   void drawChrome() override;

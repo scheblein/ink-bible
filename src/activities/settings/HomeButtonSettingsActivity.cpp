@@ -16,11 +16,10 @@ void HomeButtonSettingsActivity::activateIndex(int index) {
   app.clearTapFlash();
   nav.selected = index;
   const auto field = home_button::FIELDS[index];
-  const uint8_t value = SETTINGS.*field;
-  const int current = value < static_cast<uint8_t>(HomeButtonAction::Count) ? value : 0;
+  const int current = home_button::displayIndexForAction(SETTINGS.*field);
   optionPopup.show(home_button::GESTURE_LABELS[index], home_button::ACTION_LABELS,
-                   static_cast<int>(HomeButtonAction::Count), current, [field](int selected) {
-                     SETTINGS.*field = static_cast<uint8_t>(selected);
+                   static_cast<int>(home_button::ACTION_OPTION_COUNT), current, [field](int selected) {
+                     SETTINGS.*field = home_button::actionForDisplayIndex(selected);
                      SETTINGS.saveToFile();
                    });
   requestUpdate();
@@ -39,9 +38,8 @@ void HomeButtonSettingsActivity::buildScreen(UiScreen& screen) {
   for (int i = 0; i < listCount(); ++i) {
     rows[i].label = I18N.get(home_button::GESTURE_LABELS[i]);
     rows[i].actionValue = static_cast<int16_t>(i);
-    const uint8_t value = SETTINGS.*home_button::FIELDS[i];
-    rows[i].value = value < static_cast<uint8_t>(HomeButtonAction::Count) ? I18N.get(home_button::ACTION_LABELS[value])
-                                                                          : I18N.get(home_button::ACTION_LABELS[0]);
+    const int displayIndex = home_button::displayIndexForAction(SETTINGS.*home_button::FIELDS[i]);
+    rows[i].value = I18N.get(home_button::ACTION_LABELS[displayIndex]);
   }
   fui::ListProps props;
   props.items = rows;

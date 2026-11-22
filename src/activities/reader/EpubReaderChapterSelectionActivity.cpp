@@ -1,9 +1,11 @@
 #include "EpubReaderChapterSelectionActivity.h"
 
+#include <BibleCanon.h>
 #include <FontCacheManager.h>
 #include <GfxRenderer.h>
 #include <I18n.h>
 
+#include <cstdio>
 #include <string>
 
 #include "MappedInputManager.h"
@@ -18,7 +20,8 @@ EpubReaderChapterSelectionActivity::EpubReaderChapterSelectionActivity(GfxRender
                                                                        const int currentTocIndex)
     : UiListActivity("EpubReaderChapterSelection", renderer, mappedInput),
       epub(epub),
-      currentTocIndex(currentTocIndex) {}
+      currentTocIndex(currentTocIndex),
+      bibleMode(epub && epub->getSpineItemsCount() == BibleCanon::TOTAL_CHAPTER_COUNT) {}
 
 void EpubReaderChapterSelectionActivity::onEnter() {
   UiListActivity::onEnter();
@@ -37,10 +40,59 @@ void EpubReaderChapterSelectionActivity::onEnter() {
     return;
   }
 
+  if (bibleMode) {
+    BibleCanon::resolveSpineIndex(currentTocIndex, selectedBookIndex, initialChapterNumber);
+    selectedChapterNumber = initialChapterNumber;
+    bibleStage = BibleStage::Book;
+    nav.reset(selectedBookIndex);
+    return;
+  }
+
   // Start with the current chapter at the top of the viewport; the first
   // screen build pulls the viewport to it (ListNav follow-on-build) and
   // materializes the row window there (refreshTocWindow in buildScreen).
   nav.selected = currentTocIndex;
+}
+
+int EpubReaderChapterSelectionActivity::listCount() const {
+  if (!epub) return 0;
+  if (!bibleMode) return epub->getTocItemsCount();
+  switch (bibleStage) {
+    case BibleStage::Book:
+      return BibleCanon::BOOK_COUNT;
+    case BibleStage::Chapter:
+      return (selectedBookIndex >= 0 && selectedBookIndex < BibleCanon::BOOK_COUNT)
+                 ? BibleCanon::BOOKS[selectedBookIndex].chapterCount
+                 : 0;
+    case BibleStage::Verse:
+      return BibleCanon::getVerseCount(selectedBookIndex, selectedChapterNumber);
+  }
+  return 0;
+}
+
+void EpubReaderChapterSelectionActivity::provideBibleRow(void* ctx, const uint16_t index, fui::ListItem& item) {
+  auto* self = static_cast<EpubReaderChapterSelectionActivity*>(ctx);
+  item.actionValue = static_cast<int16_t>(index);
+  switch (self->bibleStage) {
+    case BibleStage::Book: {
+      if (index >= BibleCanon::BOOK_COUNT) return;
+      const auto& book = BibleCanon::BOOKS[index];
+      item.label = book.name;
+      snprintf(self->rowValueBuf, sizeof(self->rowValueBuf), tr(STR_BIBLE_CHAPTER_COUNT_FORMAT),
+               static_cast<unsigned>(book.chapterCount));
+      item.value = self->rowValueBuf;
+      return;
+    }
+    case BibleStage::Chapter:
+      snprintf(self->rowLabelBuf, sizeof(self->rowLabelBuf), "%s %u", tr(STR_CHAPTER),
+               static_cast<unsigned>(index + 1));
+      item.label = self->rowLabelBuf;
+      return;
+    case BibleStage::Verse:
+      snprintf(self->rowLabelBuf, sizeof(self->rowLabelBuf), "%s %u", tr(STR_VERSE), static_cast<unsigned>(index + 1));
+      item.label = self->rowLabelBuf;
+      return;
+  }
 }
 
 // Materialize the ListItem/label window starting at `start` (clamped). TOC
@@ -84,10 +136,51 @@ void EpubReaderChapterSelectionActivity::activateIndex(const int index) {
   if (index < 0 || index >= listCount()) {
     return;
   }
-  // The activated row leaves this screen (finish); a lingering flash would gray
+  // The activated row leaves this screen or stage; a lingering flash would gray
   // an unrelated element on the next render.
   app.clearTapFlash();
   nav.selected = index;
+
+  if (bibleMode) {
+    switch (bibleStage) {
+      case BibleStage::Book: {
+        {
+          RenderLock lock(*this);
+          closeRouting();
+          const bool sameBook = (index == selectedBookIndex);
+          selectedBookIndex = index;
+          selectedChapterNumber = sameBook ? initialChapterNumber : 1;
+          bibleStage = BibleStage::Chapter;
+          nav.reset(selectedChapterNumber - 1);
+        }
+        requestUpdate();
+        return;
+      }
+      case BibleStage::Chapter: {
+        RenderLock lock(*this);
+        closeRouting();
+        selectedChapterNumber = index + 1;
+        bibleStage = BibleStage::Verse;
+        nav.reset(0);
+      }
+        requestUpdate();
+        return;
+      case BibleStage::Verse: {
+        const int verseNumber = index + 1;
+        const int targetSpine = BibleCanon::getSpineIndex(selectedBookIndex, selectedChapterNumber);
+        std::string anchor;
+        if (verseNumber > 1) {
+          char anchorBuf[16];
+          snprintf(anchorBuf, sizeof(anchorBuf), "v%d", verseNumber);
+          anchor = anchorBuf;
+        }
+        setResult(ChapterResult{targetSpine, std::move(anchor)});
+        finish();
+        return;
+      }
+    }
+  }
+
   const auto tocItem = epub->getTocItem(index);
   if (tocItem.spineIndex == -1) {
     ActivityResult result;
@@ -102,6 +195,28 @@ void EpubReaderChapterSelectionActivity::activateIndex(const int index) {
 
 bool EpubReaderChapterSelectionActivity::handleButtons() {
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+    if (bibleMode) {
+      switch (bibleStage) {
+        case BibleStage::Verse: {
+          RenderLock lock(*this);
+          closeRouting();
+          bibleStage = BibleStage::Chapter;
+          nav.reset(selectedChapterNumber - 1);
+        }
+          requestUpdate();
+          return true;
+        case BibleStage::Chapter: {
+          RenderLock lock(*this);
+          closeRouting();
+          bibleStage = BibleStage::Book;
+          nav.reset(selectedBookIndex);
+        }
+          requestUpdate();
+          return true;
+        case BibleStage::Book:
+          break;
+      }
+    }
     ActivityResult result;
     result.isCancelled = true;
     setResult(std::move(result));
@@ -143,6 +258,14 @@ void EpubReaderChapterSelectionActivity::buildScreen(UiScreen& screen) {
   props.count = static_cast<uint16_t>(listCount());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
+  if (bibleMode) {
+    props.rowProvider = &EpubReaderChapterSelectionActivity::provideBibleRow;
+    props.rowProviderCtx = this;
+    props.valueInset = 8;
+    syncListViewport(screen, props);
+    screen.list(props);
+    return;
+  }
   syncListViewport(screen, props);
   // Materialize the row window for the final viewport (syncListViewport just
   // applied follow/clamping to nav.top) and hand list() the window with its
@@ -154,5 +277,23 @@ void EpubReaderChapterSelectionActivity::buildScreen(UiScreen& screen) {
 }
 
 void EpubReaderChapterSelectionActivity::drawChrome() {
-  GUI.drawHeader(renderer, UITheme::getInstance().getHeaderRect(renderer, true, false), tr(STR_SELECT_CHAPTER));
+  const Rect headerRect = UITheme::getInstance().getHeaderRect(renderer, true, false);
+  if (!bibleMode) {
+    GUI.drawHeader(renderer, headerRect, tr(STR_SELECT_CHAPTER));
+    return;
+  }
+  switch (bibleStage) {
+    case BibleStage::Book:
+      GUI.drawHeader(renderer, headerRect, tr(STR_SELECT_BOOK));
+      return;
+    case BibleStage::Chapter:
+      GUI.drawHeader(renderer, headerRect, BibleCanon::BOOKS[selectedBookIndex].name);
+      return;
+    case BibleStage::Verse: {
+      char headerBuf[48];
+      snprintf(headerBuf, sizeof(headerBuf), "%s %d", BibleCanon::BOOKS[selectedBookIndex].name, selectedChapterNumber);
+      GUI.drawHeader(renderer, headerRect, headerBuf);
+      return;
+    }
+  }
 }

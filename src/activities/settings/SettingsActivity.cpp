@@ -55,6 +55,9 @@ bool showOnDevice(const SettingInfo& setting) {
   if (setting.valuePtr == &CrossPointSettings::fadingFix && (BoardConfig::isX4Pro() || BoardConfig::isX4Classic())) {
     return false;
   }
+  if (setting.valuePtr == &CrossPointSettings::backShortToFileBrowser) {
+    return false;
+  }
   // Merged into the Text Settings screen.
   if (setting.category == StrId::STR_CAT_READER && setting.inTextSettings) return false;
   if (setting.valuePtr == &CrossPointSettings::pwrBtnFootnoteBack &&
@@ -70,7 +73,7 @@ SettingsSection sectionFor(const SettingInfo& setting) {
   if (setting.valuePtr == &CrossPointSettings::libraryUseMetadata ||
       setting.valuePtr == &CrossPointSettings::removeReadBooksFromRecents ||
       setting.valuePtr == &CrossPointSettings::moveFinishedToReadFolder) {
-    return SettingsSection::Library;
+    return SettingsSection::End;
   }
   if (setting.valuePtr == &CrossPointSettings::sleepTimeoutMinutes) return SettingsSection::Display;
   if (setting.category == StrId::STR_CAT_DISPLAY) return SettingsSection::Display;
@@ -89,12 +92,7 @@ void SettingsActivity::rebuildSettings() {
   // reader activity ran — otherwise the font-family picker shows stale list.
   sdFontSystem.refreshIfDirty();
 
-  // Rescan /dictionaries on every rebuild: cheap (one directory listing) and
-  // picks up dictionaries copied to the SD card since the last visit.
-  std::vector<DictionaryEntry> dictionaries;
-  DictionaryRegistry::discover(dictionaries);
-
-  auto all = getSettingsList(&sdFontSystem.registry(), &dictionaries);
+  auto all = getSettingsList(&sdFontSystem.registry(), nullptr);
 
   const size_t count = std::count_if(all.begin(), all.end(), [this](const SettingInfo& setting) {
     return sectionFor(setting) == section && showOnDevice(setting);
@@ -106,8 +104,6 @@ void SettingsActivity::rebuildSettings() {
     if (target == section) settings.push_back(SettingInfo::Action(name, action));
   };
 
-  // Language leads so a user stuck in an unfamiliar language finds it first.
-  addAction(SettingsSection::General, StrId::STR_LANGUAGE, SettingAction::Language);
   addAction(SettingsSection::General, StrId::STR_KEYBOARD_LAYOUTS, SettingAction::KeyboardLayouts);
   addAction(SettingsSection::Reader, StrId::STR_TEXT_SETTINGS, SettingAction::TextSettings);
   addAction(SettingsSection::Reader, StrId::STR_MANAGE_FONTS, SettingAction::DownloadFonts);
@@ -134,9 +130,6 @@ void SettingsActivity::rebuildSettings() {
   if (bleturner::status().compiledIn) {
     addAction(SettingsSection::Network, StrId::STR_BT_PAGE_TURNER, SettingAction::Bluetooth);
   }
-  addAction(SettingsSection::Network, StrId::STR_KOREADER_SYNC, SettingAction::KOReaderSync);
-  addAction(SettingsSection::Network, StrId::STR_OPDS_SERVERS, SettingAction::OPDSBrowser);
-  addAction(SettingsSection::Network, StrId::STR_PLUGINS, SettingAction::Plugins);
 
   // OTA fetches this board's own release asset (see OtaUpdater); boards whose
   // asset isn't published yet just report no update available. The Picco's

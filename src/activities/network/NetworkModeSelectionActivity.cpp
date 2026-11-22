@@ -10,40 +10,32 @@
 namespace fui = freeink::ui;
 
 namespace {
-constexpr StrId menuItems[NetworkModeSelectionActivity::MENU_ITEM_COUNT] = {
-    StrId::STR_JOIN_NETWORK,
-    StrId::STR_CALIBRE_WIRELESS,
-    StrId::STR_CREATE_HOTSPOT,
+struct ModeRow {
+  NetworkMode mode;
+  StrId label;
+  StrId desc;
+  UIIcon icon;
+};
+
+constexpr ModeRow MODE_ROWS[] = {
+    {NetworkMode::JOIN_NETWORK, StrId::STR_JOIN_NETWORK, StrId::STR_JOIN_DESC, UIIcon::Wifi},
+    {NetworkMode::CREATE_HOTSPOT, StrId::STR_CREATE_HOTSPOT, StrId::STR_HOTSPOT_DESC, UIIcon::Hotspot},
 #if FREEINK_CAP_USB_MSC
-    StrId::STR_USB_DRIVE,
+    {NetworkMode::USB_DRIVE, StrId::STR_USB_DRIVE, StrId::STR_USB_DRIVE_DESC, UIIcon::Usb},
 #endif
 };
-constexpr StrId menuDescs[NetworkModeSelectionActivity::MENU_ITEM_COUNT] = {
-    StrId::STR_JOIN_DESC,
-    StrId::STR_CALIBRE_DESC,
-    StrId::STR_HOTSPOT_DESC,
-#if FREEINK_CAP_USB_MSC
-    StrId::STR_USB_DRIVE_DESC,
-#endif
-};
-constexpr UIIcon menuIcons[NetworkModeSelectionActivity::MENU_ITEM_COUNT] = {
-    UIIcon::Wifi,
-    UIIcon::Library,
-    UIIcon::Hotspot,
-#if FREEINK_CAP_USB_MSC
-    UIIcon::Usb,
-#endif
-};
+static_assert(sizeof(MODE_ROWS) / sizeof(MODE_ROWS[0]) == NetworkModeSelectionActivity::MENU_ITEM_COUNT);
 }  // namespace
 
 NetworkModeSelectionActivity::NetworkModeSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("NetworkModeSelection", renderer, mappedInput) {
   // Entirely static, so built once here rather than every buildScreen() call.
   for (int i = 0; i < MENU_ITEM_COUNT; i++) {
+    const ModeRow& row = MODE_ROWS[i];
     fui::ListItem item;
-    item.label = I18N.get(menuItems[i]);
-    item.subtitle = I18N.get(menuDescs[i]);
-    item.icon = listIconFor(menuIcons[i], 32);  // subtitle rows carry the larger icon
+    item.label = I18N.get(row.label);
+    item.subtitle = I18N.get(row.desc);
+    item.icon = listIconFor(row.icon, 32);  // subtitle rows carry the larger icon
     item.actionValue = static_cast<int16_t>(i);
     rowItems_[i] = item;
   }
@@ -59,7 +51,9 @@ void NetworkModeSelectionActivity::activateIndex(const int index) {
   app.clearTapFlash();
   nav.selected = index;
 
-  onModeSelected(static_cast<NetworkMode>(index));
+  if (index >= 0 && index < MENU_ITEM_COUNT) {
+    onModeSelected(MODE_ROWS[index].mode);
+  }
 }
 
 void NetworkModeSelectionActivity::buildScreen(UiScreen& screen) {

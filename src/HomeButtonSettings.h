@@ -5,19 +5,46 @@
 #include "CrossPointSettings.h"
 
 namespace home_button {
-inline constexpr StrId ACTION_LABELS[] = {StrId::STR_HOME_SHORTCUT,
-                                          StrId::STR_IGNORE,
-                                          StrId::STR_PAGE_TURN,
-                                          StrId::STR_FORCE_REFRESH,
-                                          StrId::STR_FOOTNOTES,
-                                          StrId::STR_CONFIRM,
-                                          StrId::STR_KOSYNC,
-                                          StrId::STR_BOOKMARK_OPTION,
-                                          StrId::STR_DICTIONARY,
-                                          StrId::STR_READER_MENU,
-                                          StrId::STR_TOGGLE_FRONTLIGHT,
-                                          StrId::STR_SAVE_CLIPPING};
-static_assert(sizeof(ACTION_LABELS) / sizeof(ACTION_LABELS[0]) == static_cast<unsigned>(HomeButtonAction::Count));
+struct ActionOption {
+  StrId label;
+  HomeButtonAction action;
+};
+
+inline constexpr ActionOption ACTION_OPTIONS[] = {
+    {StrId::STR_HOME_SHORTCUT, HomeButtonAction::Home},
+    {StrId::STR_IGNORE, HomeButtonAction::Ignore},
+    {StrId::STR_PAGE_TURN, HomeButtonAction::NextPage},
+    {StrId::STR_FORCE_REFRESH, HomeButtonAction::Refresh},
+    {StrId::STR_FOOTNOTES, HomeButtonAction::Footnotes},
+    {StrId::STR_CONFIRM, HomeButtonAction::Confirm},
+    {StrId::STR_BOOKMARK_OPTION, HomeButtonAction::Bookmark},
+    {StrId::STR_READER_MENU, HomeButtonAction::ReaderMenu},
+    {StrId::STR_TOGGLE_FRONTLIGHT, HomeButtonAction::ToggleFrontlight},
+    {StrId::STR_SAVE_CLIPPING, HomeButtonAction::CreateClipping},
+    {StrId::STR_BROWSE_FILES, HomeButtonAction::FileBrowser},
+};
+inline constexpr size_t ACTION_OPTION_COUNT = sizeof(ACTION_OPTIONS) / sizeof(ACTION_OPTIONS[0]);
+
+inline constexpr StrId ACTION_LABELS[ACTION_OPTION_COUNT] = {
+    StrId::STR_HOME_SHORTCUT,     StrId::STR_IGNORE,        StrId::STR_PAGE_TURN,       StrId::STR_FORCE_REFRESH,
+    StrId::STR_FOOTNOTES,         StrId::STR_CONFIRM,       StrId::STR_BOOKMARK_OPTION, StrId::STR_READER_MENU,
+    StrId::STR_TOGGLE_FRONTLIGHT, StrId::STR_SAVE_CLIPPING, StrId::STR_BROWSE_FILES,
+};
+
+inline int displayIndexForAction(const uint8_t rawAction) {
+  for (size_t i = 0; i < ACTION_OPTION_COUNT; ++i) {
+    if (static_cast<uint8_t>(ACTION_OPTIONS[i].action) == rawAction) return static_cast<int>(i);
+  }
+  return 0;  // Home
+}
+
+inline uint8_t actionForDisplayIndex(const int displayIndex) {
+  if (displayIndex < 0 || static_cast<size_t>(displayIndex) >= ACTION_OPTION_COUNT) {
+    return static_cast<uint8_t>(HomeButtonAction::Home);
+  }
+  return static_cast<uint8_t>(ACTION_OPTIONS[displayIndex].action);
+}
+
 inline constexpr StrId GESTURE_LABELS[] = {StrId::STR_HOME_BUTTON_TAP, StrId::STR_HOME_BUTTON_DOUBLE_TAP,
                                            StrId::STR_HOME_BUTTON_LONG_PRESS};
 inline constexpr uint8_t CrossPointSettings::* FIELDS[] = {&CrossPointSettings::homeButtonTapAction,

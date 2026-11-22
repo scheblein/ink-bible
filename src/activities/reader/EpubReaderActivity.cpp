@@ -936,7 +936,9 @@ void EpubReaderActivity::loop() {
     return;
   }
 
-  if (handleBackNavigation()) {
+  if (ReaderUtils::handleBackNavigation(
+          mappedInput, activityManager, bookPath.c_str(),
+          {this, [](void* ctx) { static_cast<EpubReaderActivity*>(ctx)->openChapterSelection(false); }})) {
     return;
   }
 
@@ -1129,6 +1131,51 @@ int EpubReaderActivity::currentTocIndex() const {
   return std::max(0, cachedSection.getTocIndexForPage(nextPageNumber));
 }
 
+void EpubReaderActivity::openChapterSelection(const bool reopenMenuOnCancel) {
+  int tocIndex;
+  // Release the section while the chapter list is up (mirrors the
+  // TEXT_SETTINGS path): picking a chapter resets it anyway, and its
+  // tens-of-KB footprint is the difference between the chapter list
+  // holding its CJK glyph arena (RAM-only repaints) and re-reading
+  // glyphs from SD on every row step. Cancel restores via the same
+  // cached-position rebuild TEXT_SETTINGS uses.
+  {
+    RenderLock lock;
+    settleOverlayRefresh();
+    if (epub && epub->getSpineItemsCount() == BibleCanon::TOTAL_CHAPTER_COUNT) {
+      tocIndex = currentSpineIndex;
+    } else {
+      tocIndex = currentTocIndex();
+    }
+    if (section) {
+      rememberCurrentContentOffset();
+      cachedSpineIndex = currentSpineIndex;
+      cachedChapterTotalPageCount = section->pageCount;
+      nextPageNumber = section->currentPage;
+    }
+    section.reset();
+  }
+  startActivityForResult(std::make_unique<EpubReaderChapterSelectionActivity>(renderer, mappedInput, epub, tocIndex),
+                         [this, reopenMenuOnCancel](const ActivityResult& result) {
+                           if (result.isCancelled) {
+                             if (reopenMenuOnCancel) {
+                               openReaderMenu();
+                             } else {
+                               requestUpdate();
+                             }
+                             return;
+                           }
+                           const auto& chapterResult = std::get<ChapterResult>(result.data);
+                           RenderLock lock;
+                           clearDeferredReposition();
+                           currentSpineIndex = chapterResult.spineIndex;
+                           pendingAnchor = chapterResult.anchor;
+                           nextPageNumber = 0;
+                           section.reset();
+                           requestUpdate();
+                         });
+}
+
 void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction action) {
   auto progressChangeResultHandler = [this](const ActivityResult& result) {
     loadCachedBookmarks();
@@ -1143,40 +1190,7 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
 
   switch (action) {
     case EpubReaderMenuActivity::MenuAction::SELECT_CHAPTER: {
-      int tocIndex;
-      // Release the section while the chapter list is up (mirrors the
-      // TEXT_SETTINGS path): picking a chapter resets it anyway, and its
-      // tens-of-KB footprint is the difference between the chapter list
-      // holding its CJK glyph arena (RAM-only repaints) and re-reading
-      // glyphs from SD on every row step. Cancel restores via the same
-      // cached-position rebuild TEXT_SETTINGS uses.
-      {
-        RenderLock lock;
-        tocIndex = currentTocIndex();
-        if (section) {
-          rememberCurrentContentOffset();
-          cachedSpineIndex = currentSpineIndex;
-          cachedChapterTotalPageCount = section->pageCount;
-          nextPageNumber = section->currentPage;
-        }
-        section.reset();
-      }
-      startActivityForResult(
-          std::make_unique<EpubReaderChapterSelectionActivity>(renderer, mappedInput, epub, tocIndex),
-          [this](const ActivityResult& result) {
-            if (result.isCancelled) {
-              openReaderMenu();
-              return;
-            }
-            const auto& chapterResult = std::get<ChapterResult>(result.data);
-            RenderLock lock;
-            clearDeferredReposition();
-            currentSpineIndex = chapterResult.spineIndex;
-            pendingAnchor = chapterResult.anchor;
-            nextPageNumber = 0;
-            section.reset();
-            requestUpdate();
-          });
+      openChapterSelection(true);
       break;
     }
     case EpubReaderMenuActivity::MenuAction::FOOTNOTES: {
@@ -1240,6 +1254,14 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
     }
     case EpubReaderMenuActivity::MenuAction::GO_HOME: {
       onGoHome();
+      return;
+    }
+    case EpubReaderMenuActivity::MenuAction::FILE_TRANSFER: {
+      activityManager.goToFileTransfer();
+      return;
+    }
+    case EpubReaderMenuActivity::MenuAction::SETTINGS_MENU: {
+      activityManager.goToSettings();
       return;
     }
     case EpubReaderMenuActivity::MenuAction::DELETE_CACHE: {
@@ -1573,6 +1595,19 @@ bool EpubReaderActivity::remoteShortcut(const bool readerMenu) {
   } else {
     openReaderMenu();
   }
+  return true;
+}
+
+bool EpubReaderActivity::handleHomeGesture() {
+  if (overlay != Overlay::None) {
+    closeOverlayToPage();
+    return true;
+  }
+  if (footnoteDepth > 0) {
+    restoreSavedPosition();
+    return true;
+  }
+  openChapterSelection(false);
   return true;
 }
 
@@ -2602,6 +2637,14 @@ void EpubReaderActivity::settleOverlayRefresh() {
 
 void EpubReaderActivity::openOverlay(Overlay target) {
   mappedInput.resetHomeButtonInput();
+  if (target == Overlay::Contents) {
+    overlay = Overlay::None;
+    overlayPopup.dismiss();
+    toolbarUi.reset();
+    discardOverlayPage();
+    openChapterSelection(false);
+    return;
+  }
   const Overlay previous = overlay;
   overlay = target;
   if (!toolbarUi) toolbarUi = std::make_unique<ReaderToolbarUi>(renderer);
@@ -2612,14 +2655,6 @@ void EpubReaderActivity::openOverlay(Overlay target) {
     case Overlay::Toolbar:
       focusedTool = 0;
       break;
-    case Overlay::Contents: {
-      RenderLock lock;
-      panelIndex = currentTocIndex();
-      // Fresh viewport opening on the current chapter, cursor shown or not.
-      toolbarUi->nav().reset(panelIndex);
-      toolbarUi->nav().top = panelIndex;
-      break;
-    }
     case Overlay::Text:
       panelIndex = 0;
       toolbarUi->nav().reset();
@@ -2719,7 +2754,7 @@ void EpubReaderActivity::renderOverlay() {
     return;
   }
 
-  // Panels (Contents / Text / More): a bottom sheet over the page.
+  // Panels (Text / More): a bottom sheet over the page.
   model.panel = true;
   if (!mappedInput.hasTouch()) {
     model.denseRows = true;
@@ -2727,15 +2762,7 @@ void EpubReaderActivity::renderOverlay() {
   // Tap-first: the cursor is only drawn once a button has moved it, so a
   // tapped row does not stay inverted after its action.
   model.selectedIndex = panelCursorShown ? panelIndex : -1;
-  if (overlay == Overlay::Contents) {
-    model.panelTitle = tr(STR_TOOL_CONTENTS);
-    model.itemCount = epub->getTocItemsCount();
-    model.rowText = [this](int i) {
-      const auto item = epub->getTocItem(i);
-      const int depth = item.level > 1 ? (item.level - 1) * 2 : 0;
-      return std::string(depth, ' ') + item.title;
-    };
-  } else if (overlay == Overlay::Text) {
+  if (overlay == Overlay::Text) {
     model.panelTitle = tr(STR_TOOL_TEXT);
     model.itemCount = kTextRowCount;
     model.rowText = [this](int i) { return textRowName(i); };
@@ -2870,13 +2897,11 @@ void EpubReaderActivity::handleOverlayInput() {
     return;
   }
 
-  // --- Panels (Contents / Text / More) ---
-  const int count = overlay == Overlay::Contents ? epub->getTocItemsCount()
-                    : overlay == Overlay::Text   ? kTextRowCount
-                                                 : static_cast<int>(moreItems.size());
+  // --- Panels (Text / More) ---
+  const int count = overlay == Overlay::Text ? kTextRowCount : static_cast<int>(moreItems.size());
   const int pageRows = std::max(1, toolbarUi->visibleRows());
 
-  // Activate the highlighted row: change a value / jump to a chapter / run an
+  // Activate the highlighted row: change a value / run an
   // action. Shared by the Confirm button and a row tap.
   const auto activateRow = [this, count, &fastRedraw] {
     if (panelIndex < 0 || panelIndex >= count) return;
@@ -2908,19 +2933,6 @@ void EpubReaderActivity::handleOverlayInput() {
         // Enum rows open the Settings-style option picker.
         showTextRowPopup(panelIndex);
       }
-    } else if (overlay == Overlay::Contents) {
-      const auto item = epub->getTocItem(panelIndex);
-      if (item.spineIndex != -1) {
-        RenderLock lock;
-        clearDeferredReposition();
-        currentSpineIndex = item.spineIndex;
-        pendingAnchor = item.anchor;
-        nextPageNumber = 0;
-        section.reset();
-      }
-      overlay = Overlay::None;
-      discardOverlayPage();
-      requestUpdate();
     } else if (overlay == Overlay::More) {
       activateMoreRow(panelIndex);
     }
@@ -3201,10 +3213,13 @@ void EpubReaderActivity::activateMoreRow(int row) {
     return;
   }
   onReaderMenuConfirm(action);
-  // Child screens re-render the reader on Pop; GO_HOME/DELETE_CACHE leave the
-  // reader entirely. In-place actions would otherwise leave the closed panel
+  // Child screens re-render the reader on Pop; actions that replace the reader
+  // leave it entirely. In-place actions would otherwise leave the closed panel
   // on screen.
-  if (action != MA::GO_HOME && action != MA::DELETE_CACHE) requestUpdate();
+  if (action != MA::GO_HOME && action != MA::DELETE_CACHE && action != MA::FILE_TRANSFER &&
+      action != MA::SETTINGS_MENU) {
+    requestUpdate();
+  }
 }
 
 void EpubReaderActivity::navigateToHref(const std::string& hrefStr, const bool savePosition) {

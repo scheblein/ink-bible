@@ -189,7 +189,8 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
                            "pwrBtnFootnoteBack", StrId::STR_CAT_CONTROLS));
   if (!BoardConfig::hasTouch())
     emit(SettingInfo::Toggle(StrId::STR_BACK_SHORT_TO_FILE_BROWSER, &CrossPointSettings::backShortToFileBrowser,
-                             "backShortToFileBrowser", StrId::STR_CAT_CONTROLS));
+                             "backShortToFileBrowser", StrId::STR_CAT_CONTROLS)
+             .withWebHidden());
 
   // Persisted here; set from the Connectivity -> Plugins popup.
   emit(SettingInfo::Toggle(StrId::STR_PLUGINS, &CrossPointSettings::pluginsEnabled, "pluginsEnabled").withWebHidden());
@@ -204,21 +205,24 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
   emit(SettingInfo::Toggle(StrId::STR_SHOW_HIDDEN_FILES, &CrossPointSettings::showHiddenFiles, "showHiddenFiles",
                            StrId::STR_CAT_SYSTEM));
   emit(SettingInfo::Toggle(StrId::STR_LIBRARY_USE_METADATA, &CrossPointSettings::libraryUseMetadata,
-                           "libraryUseMetadata", StrId::STR_CAT_SYSTEM));
+                           "libraryUseMetadata", StrId::STR_CAT_SYSTEM)
+           .withWebHidden());
   emit(SettingInfo::Toggle(StrId::STR_REMOVE_READ_FROM_RECENTS, &CrossPointSettings::removeReadBooksFromRecents,
-                           "removeReadBooksFromRecents", StrId::STR_CAT_SYSTEM));
+                           "removeReadBooksFromRecents", StrId::STR_CAT_SYSTEM)
+           .withWebHidden());
   emit(SettingInfo::Toggle(StrId::STR_MOVE_FINISHED_TO_READ, &CrossPointSettings::moveFinishedToReadFolder,
-                           "moveFinishedToReadFolder", StrId::STR_CAT_SYSTEM));
+                           "moveFinishedToReadFolder", StrId::STR_CAT_SYSTEM)
+           .withWebHidden());
 
-  // OPDS download folder: persisted + web-exposed, but category-less so it
-  // is hidden from the on-device Settings screen (edited via OPDS UI).
+  // OPDS download folder: persisted, hidden from Settings and Web UI.
   emit(SettingInfo::String(StrId::STR_OPDS_DOWNLOAD_FOLDER, &SETTINGS.opdsDownloadFolder[0],
-                           sizeof(SETTINGS.opdsDownloadFolder), "opdsDownloadFolder"));
-  // OPDS download filename format: persisted + web-exposed, category-less so it
-  // is hidden from the on-device Settings screen (cycled from the OPDS UI).
+                           sizeof(SETTINGS.opdsDownloadFolder), "opdsDownloadFolder")
+           .withWebHidden());
+  // OPDS download filename format: persisted, hidden from Settings and Web UI.
   emit(SettingInfo::Enum(StrId::STR_OPDS_FILENAME_FORMAT, &CrossPointSettings::opdsFilenameFormat,
                          {StrId::STR_FMT_AUTHOR_TITLE, StrId::STR_FMT_TITLE_AUTHOR, StrId::STR_FMT_TITLE},
-                         "opdsFilenameFormat"));
+                         "opdsFilenameFormat")
+           .withWebHidden());
 
   // Frontlight quick-panel state: persisted and web-exposed, but hidden
   // from the on-device Settings screen because the swipe panel owns it.
@@ -229,100 +233,6 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
 #endif
   emit(SettingInfo::Toggle(StrId::STR_FRONTLIGHT, &CrossPointSettings::frontlightOn, "frontlightOn"));
 
-  // --- KOReader Sync (web-only, uses KOReaderCredentialStore) ---
-  emit(SettingInfo::DynamicString(
-      StrId::STR_KOREADER_USERNAME, [] { return KOREADER_STORE.getUsername(); },
-      [](const std::string& v) {
-        KOREADER_STORE.setCredentials(v, KOREADER_STORE.getPassword());
-        KOREADER_STORE.saveToFile();
-      },
-      "koUsername", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicString(
-           StrId::STR_KOREADER_PASSWORD, [] { return KOREADER_STORE.getPassword(); },
-           [](const std::string& v) {
-             KOREADER_STORE.setCredentials(KOREADER_STORE.getUsername(), v);
-             KOREADER_STORE.saveToFile();
-           },
-           "koPassword", StrId::STR_KOREADER_SYNC)
-           .withObfuscated());
-  emit(SettingInfo::DynamicString(
-      StrId::STR_SYNC_SERVER_URL, [] { return KOREADER_STORE.getServerUrl(); },
-      [](const std::string& v) {
-        KOREADER_STORE.setServerUrl(v);
-        KOREADER_STORE.saveToFile();
-      },
-      "koServerUrl", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicString(
-      StrId::STR_KOREADER_CUSTOM_HEADER_1_NAME, [] { return KOREADER_STORE.getCustomHeaders()[0].name; },
-      [](const std::string& v) {
-        KOREADER_STORE.setCustomHeader(0, v, KOREADER_STORE.getCustomHeaders()[0].value);
-        KOREADER_STORE.saveToFile();
-      },
-      "koHeader1Name", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicString(
-           StrId::STR_KOREADER_CUSTOM_HEADER_1_VALUE, [] { return KOREADER_STORE.getCustomHeaders()[0].value; },
-           [](const std::string& v) {
-             KOREADER_STORE.setCustomHeader(0, KOREADER_STORE.getCustomHeaders()[0].name, v);
-             KOREADER_STORE.saveToFile();
-           },
-           "koHeader1Value", StrId::STR_KOREADER_SYNC)
-           .withObfuscated());
-  emit(SettingInfo::DynamicString(
-      StrId::STR_KOREADER_CUSTOM_HEADER_2_NAME, [] { return KOREADER_STORE.getCustomHeaders()[1].name; },
-      [](const std::string& v) {
-        KOREADER_STORE.setCustomHeader(1, v, KOREADER_STORE.getCustomHeaders()[1].value);
-        KOREADER_STORE.saveToFile();
-      },
-      "koHeader2Name", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicString(
-           StrId::STR_KOREADER_CUSTOM_HEADER_2_VALUE, [] { return KOREADER_STORE.getCustomHeaders()[1].value; },
-           [](const std::string& v) {
-             KOREADER_STORE.setCustomHeader(1, KOREADER_STORE.getCustomHeaders()[1].name, v);
-             KOREADER_STORE.saveToFile();
-           },
-           "koHeader2Value", StrId::STR_KOREADER_SYNC)
-           .withObfuscated());
-  emit(SettingInfo::DynamicEnum(
-      StrId::STR_SERVER_TYPE, {StrId::STR_CROSSPOINT, StrId::STR_KOSYNC_SERVER, StrId::STR_OTHER},
-      [] { return static_cast<uint8_t>(KOREADER_STORE.getServerType()); },
-      [](uint8_t v) {
-        KOREADER_STORE.setServerType(static_cast<KOReaderServerType>(v));
-        KOREADER_STORE.saveToFile();
-      },
-      "koServerType", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicEnum(
-      StrId::STR_DOCUMENT_MATCHING, {StrId::STR_FILENAME, StrId::STR_BINARY},
-      [] { return static_cast<uint8_t>(KOREADER_STORE.getMatchMethod()); },
-      [](uint8_t v) {
-        KOREADER_STORE.setMatchMethod(static_cast<DocumentMatchMethod>(v));
-        KOREADER_STORE.saveToFile();
-      },
-      "koMatchMethod", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicEnum(
-      StrId::STR_SEND_METADATA, {StrId::STR_STATE_OFF, StrId::STR_STATE_ON},
-      [] { return static_cast<uint8_t>(KOREADER_STORE.getSendMetadata()); },
-      [](uint8_t v) {
-        KOREADER_STORE.setSendMetadata(v != 0);
-        KOREADER_STORE.saveToFile();
-      },
-      "koSendMetadata", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicEnum(
-      StrId::STR_SYNC_BEHAVIOR, {StrId::STR_ASK_EVERY_TIME, StrId::STR_SMART_SYNC},
-      [] { return static_cast<uint8_t>(KOREADER_STORE.getSyncBehavior()); },
-      [](uint8_t v) {
-        KOREADER_STORE.setSyncBehavior(static_cast<KOReaderSyncBehavior>(v));
-        KOREADER_STORE.saveToFile();
-      },
-      "koSyncBehavior", StrId::STR_KOREADER_SYNC));
-  emit(SettingInfo::DynamicEnum(
-      StrId::STR_SYNC_CLIPPINGS, {StrId::STR_STATE_OFF, StrId::STR_STATE_ON},
-      [] { return static_cast<uint8_t>(KOREADER_STORE.getSyncClippings()); },
-      [](uint8_t v) {
-        if (KOREADER_STORE.getSyncClippings() == (v != 0)) return;
-        KOREADER_STORE.setSyncClippings(v != 0);
-        KOREADER_STORE.saveToFile();
-      },
-      "koSyncClippings", StrId::STR_KOREADER_SYNC));
   // --- Status Bar Settings (web-only, uses StatusBarSettingsActivity) ---
   emit(SettingInfo::Toggle(StrId::STR_CHAPTER_PAGE_COUNT, &CrossPointSettings::statusBarChapterPageCount,
                            "statusBarChapterPageCount", StrId::STR_CUSTOMISE_STATUS_BAR));
@@ -370,8 +280,13 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
                            StrId::STR_CUSTOMISE_STATUS_BAR));
   if (BoardConfig::hasHomeKey()) {
     for (unsigned i = 0; i < 3; ++i) {
-      emit(SettingInfo::StaticEnum(home_button::GESTURE_LABELS[i], home_button::FIELDS[i], home_button::ACTION_LABELS,
-                                   home_button::KEYS[i], StrId::STR_CAT_CONTROLS));
+      const auto field = home_button::FIELDS[i];
+      emit(SettingInfo::DynamicEnum(
+          home_button::GESTURE_LABELS[i],
+          std::vector<StrId>(std::begin(home_button::ACTION_LABELS), std::end(home_button::ACTION_LABELS)),
+          [field]() -> uint8_t { return static_cast<uint8_t>(home_button::displayIndexForAction(SETTINGS.*field)); },
+          [field](uint8_t v) { SETTINGS.*field = home_button::actionForDisplayIndex(v); }, home_button::KEYS[i],
+          StrId::STR_CAT_CONTROLS));
     }
   }
 }

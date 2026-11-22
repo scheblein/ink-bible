@@ -271,7 +271,7 @@ inline bool handleBackNavigation(const MappedInputManager& mappedInput, Activity
   if (!backTriggered) return false;
 
   const bool longPress = mappedInput.getHeldTime() >= GO_BACK_OR_HOME_MS;
-  if (longPress != SETTINGS.backShortToFileBrowser) {
+  if (longPress) {
     activityManager.goToFileBrowser(filePath);
   } else {
     goHome.fn(goHome.ctx);

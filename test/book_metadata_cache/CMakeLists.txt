@@ -6,6 +6,7 @@ add_executable(BookMetadataCacheTest
 
 target_include_directories(BookMetadataCacheTest PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/stubs
+  ${REPO_ROOT}/lib/BibleCanon
   ${REPO_ROOT}/lib/Epub
   ${REPO_ROOT}/lib/Memory
   ${REPO_ROOT}/lib/Serialization

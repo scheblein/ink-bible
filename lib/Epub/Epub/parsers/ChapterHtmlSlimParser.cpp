@@ -1394,16 +1394,29 @@ void XMLCALL ChapterHtmlSlimParser::startElement(void* userData, const XML_Char*
         idAttr = idValue;
         const bool isTocAnchor =
             std::find(self->tocAnchors.begin(), self->tocAnchors.end(), idValue) != self->tocAnchors.end();
-        if (isTocAnchor || (!isNonNavigableInlineElement(name) && self->anchorData.size() < MAX_ANCHORS_PER_CHAPTER)) {
-          // Flush a displaced anchor before overwriting. Consecutive non-block elements
-          // (e.g. <aside id="fn1">text</aside><aside id="fn2">) with no intervening block
-          // never trigger startNewTextBlock, so fn1 gets silently overwritten. That leaves
-          // fn1 missing from the anchor map -> getPageForAnchor returns nullopt -> reader
-          // lands at page 0 (section start) instead of the footnote.
-          if (!self->pendingAnchorId.empty()) {
-            self->flushPendingAnchor();
+        const bool isBlockAnchor =
+            matches(name, HEADER_TAGS, std::size(HEADER_TAGS)) || matches(name, BLOCK_TAGS, std::size(BLOCK_TAGS));
+        if (isTocAnchor || (!isNonNavigableInlineElement(name) &&
+                            (self->anchorData.size() + self->pendingInlineAnchors.size()) < MAX_ANCHORS_PER_CHAPTER)) {
+          if (!isTocAnchor && !isBlockAnchor && self->currentTextBlock && !self->currentTextBlock->isEmpty() &&
+              !self->listItemBulletOnly) {
+            if (self->partWordBufferIndex > 0) {
+              self->flushPartWordBuffer();
+            }
+            const int anchorWordIndex =
+                self->wordsExtractedInBlock + static_cast<int>(self->currentTextBlock->size()) + 1;
+            self->pendingInlineAnchors.push_back({anchorWordIndex, idValue});
+          } else {
+            // Flush a displaced anchor before overwriting. Consecutive non-block elements
+            // (e.g. <aside id="fn1">text</aside><aside id="fn2">) with no intervening block
+            // never trigger startNewTextBlock, so fn1 gets silently overwritten. That leaves
+            // fn1 missing from the anchor map -> getPageForAnchor returns nullopt -> reader
+            // lands at page 0 (section start) instead of the footnote.
+            if (!self->pendingAnchorId.empty()) {
+              self->flushPendingAnchor();
+            }
+            self->pendingAnchorId = idValue;
           }
-          self->pendingAnchorId = idValue;
         }
       } else if (strcmp(atts[i], "dir") == 0) {
         dirAttr = atts[i + 1];
@@ -3175,7 +3188,7 @@ void ChapterHtmlSlimParser::addLineToPage(std::unique_ptr<TextBlock> line, const
   }
   setCurrentPageVisibleOffset(visibleOffset);
 
-  // Track cumulative words to assign footnotes to the page containing their anchor
+  // Track cumulative words to assign footnotes and inline anchors to the page containing their word
   wordsExtractedInBlock += line->wordCount();
   auto footnoteIt = pendingFootnotes.begin();
   while (footnoteIt != pendingFootnotes.end() && footnoteIt->first <= wordsExtractedInBlock) {
@@ -3183,6 +3196,13 @@ void ChapterHtmlSlimParser::addLineToPage(std::unique_ptr<TextBlock> line, const
     ++footnoteIt;
   }
   pendingFootnotes.erase(pendingFootnotes.begin(), footnoteIt);
+
+  auto anchorIt = pendingInlineAnchors.begin();
+  while (anchorIt != pendingInlineAnchors.end() && anchorIt->first <= wordsExtractedInBlock) {
+    anchorData.push_back({std::move(anchorIt->second), static_cast<uint16_t>(completedPageCount)});
+    ++anchorIt;
+  }
+  pendingInlineAnchors.erase(pendingInlineAnchors.begin(), anchorIt);
 
   // Apply horizontal left inset (margin + padding) as x position offset
   const int16_t xOffset = line->getBlockStyle().leftInset();
@@ -3256,14 +3276,20 @@ void ChapterHtmlSlimParser::makePages(const bool includeLastLine, const bool par
 
   // Trailing spacing and footnotes only apply when the block is finalized
   if (includeLastLine) {
-    // Fallback: transfer any remaining pending footnotes to current page.
+    // Fallback: transfer any remaining pending footnotes/inline anchors to current page.
     // Normally addLineToPage handles this via word-index tracking, but this catches
-    // edge cases where a footnote's word index equals the exact block size.
+    // edge cases where an anchor's word index equals or exceeds the exact block size.
     if (!pendingFootnotes.empty() && currentPage) {
       for (const auto& [idx, fn] : pendingFootnotes) {
         currentPage->addFootnote(fn.number, fn.href);
       }
       pendingFootnotes.clear();
+    }
+    if (!pendingInlineAnchors.empty()) {
+      for (auto& [idx, anchorId] : pendingInlineAnchors) {
+        anchorData.push_back({std::move(anchorId), static_cast<uint16_t>(completedPageCount)});
+      }
+      pendingInlineAnchors.clear();
     }
 
     if (!paragraphEnd) return;

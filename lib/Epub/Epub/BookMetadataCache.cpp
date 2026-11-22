@@ -1,11 +1,13 @@
 #include "BookMetadataCache.h"
 
+#include <BibleCanon.h>
 #include <BufferedFile.h>
 #include <Logging.h>
 #include <Serialization.h>
 #include <Utf8.h>
 #include <ZipFile.h>
 
+#include <cstdio>
 #include <deque>
 #include <mutex>
 #include <optional>
@@ -365,6 +367,90 @@ bool BookMetadataCache::buildBookBin(const std::string& epubPath, const BookMeta
   }
 
   LOG_DBG("BMC", "Successfully built book.bin");
+  return true;
+}
+
+bool BookMetadataCache::buildEmbeddedBibleBookBin(const BookMetadata& metadata,
+                                                  const uint16_t* const chapterUncompressedSizes) {
+  if (!chapterUncompressedSizes || !Storage.openFileForWrite("BMC", cachePath + bookBinFile, bookFile)) {
+    return false;
+  }
+
+  serialization::BufferedFileWriter bookOut(bookFile, BUILD_IO_BUFFER_SIZE);
+  spineCount = BibleCanon::TOTAL_CHAPTER_COUNT;
+  tocCount = BibleCanon::TOTAL_CHAPTER_COUNT;
+
+  constexpr uint32_t headerASize =
+      sizeof(BOOK_CACHE_VERSION) + /* LUT Offset */ sizeof(uint32_t) + sizeof(spineCount) + sizeof(tocCount);
+  const uint32_t metadataSize = metadata.title.size() + metadata.author.size() + metadata.language.size() +
+                                metadata.coverItemHref.size() + metadata.textReferenceHref.size() +
+                                sizeof(uint32_t) * 5;
+  const uint32_t lutSize = sizeof(uint32_t) * spineCount + sizeof(uint32_t) * tocCount;
+  const uint32_t lutOffset = headerASize + metadataSize;
+
+  // Header A
+  serialization::writePod(bookOut, BOOK_CACHE_VERSION);
+  serialization::writePod(bookOut, lutOffset);
+  serialization::writePod(bookOut, spineCount);
+  serialization::writePod(bookOut, tocCount);
+  // Metadata
+  serialization::writeString(bookOut, metadata.title);
+  serialization::writeString(bookOut, metadata.author);
+  serialization::writeString(bookOut, metadata.language);
+  serialization::writeString(bookOut, metadata.coverItemHref);
+  serialization::writeString(bookOut, metadata.textReferenceHref);
+
+  // Every spine entry href ("OEBPS/B01_C001.xhtml") is 20 bytes:
+  // serialized size = 4 (len) + 20 (href) + 4 (cumulativeSize) + 2 (tocIndex) = 30 bytes.
+  constexpr uint32_t SPINE_ENTRY_BYTES = 4 + 20 + sizeof(uint32_t) + sizeof(int16_t);
+  for (int i = 0; i < spineCount; i++) {
+    const uint32_t pos = lutOffset + lutSize + static_cast<uint32_t>(i) * SPINE_ENTRY_BYTES;
+    serialization::writePod(bookOut, pos);
+  }
+
+  const uint32_t tocBaseOffset = lutOffset + lutSize + static_cast<uint32_t>(spineCount) * SPINE_ENTRY_BYTES;
+  uint32_t tocRunningOffset = 0;
+  char titleBuf[32];
+  for (int i = 0; i < tocCount; i++) {
+    serialization::writePod(bookOut, tocBaseOffset + tocRunningOffset);
+    int bookIdx = 0;
+    int chapNum = 1;
+    BibleCanon::resolveSpineIndex(i, bookIdx, chapNum);
+    const int titleLen = snprintf(titleBuf, sizeof(titleBuf), "%s %d", BibleCanon::BOOKS[bookIdx].name, chapNum);
+    // TOC entry: title (4 + titleLen) + href (4 + 20) + anchor (4 + 0) + level (1) + spineIndex (2)
+    tocRunningOffset += (4 + static_cast<uint32_t>(titleLen)) + (4 + 20) + 4 + sizeof(uint8_t) + sizeof(int16_t);
+  }
+
+  uint32_t cumSize = 0;
+  char hrefBuf[24];
+  for (int i = 0; i < spineCount; i++) {
+    int bookIdx = 0;
+    int chapNum = 1;
+    BibleCanon::resolveSpineIndex(i, bookIdx, chapNum);
+    snprintf(hrefBuf, sizeof(hrefBuf), "OEBPS/B%02d_C%03d.xhtml", bookIdx + 1, chapNum);
+    cumSize += chapterUncompressedSizes[i];
+    const SpineEntry entry(hrefBuf, cumSize, static_cast<int16_t>(i));
+    writeSpineEntryTo(bookOut, entry);
+  }
+
+  for (int i = 0; i < tocCount; i++) {
+    int bookIdx = 0;
+    int chapNum = 1;
+    BibleCanon::resolveSpineIndex(i, bookIdx, chapNum);
+    snprintf(titleBuf, sizeof(titleBuf), "%s %d", BibleCanon::BOOKS[bookIdx].name, chapNum);
+    snprintf(hrefBuf, sizeof(hrefBuf), "OEBPS/B%02d_C%03d.xhtml", bookIdx + 1, chapNum);
+    const TocEntry entry(titleBuf, hrefBuf, "", 1, static_cast<int16_t>(i));
+    writeTocEntryTo(bookOut, entry);
+  }
+
+  const bool written = bookOut.flush();
+  bookFile.close();
+  if (!written) {
+    LOG_ERR("BMC", "Failed writing embedded Bible book.bin, removing truncated file");
+    Storage.remove((cachePath + bookBinFile).c_str());
+    return false;
+  }
+  LOG_DBG("BMC", "Successfully built embedded Bible book.bin");
   return true;
 }
 

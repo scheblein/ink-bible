@@ -1,5 +1,6 @@
 #include "Epub.h"
 
+#include <BibleCanon.h>
 #include <FsHelpers.h>
 #include <GifImageLayout.h>
 #include <GifLimitedWriter.h>
@@ -8,6 +9,7 @@
 #include <JpegToBmpConverter.h>
 #include <Logging.h>
 #include <Memory.h>
+#include <NetBibleData.h>
 #include <PngToBmpConverter.h>
 #include <Txt.h>
 #include <Utf8.h>
@@ -447,6 +449,9 @@ CssParser::ParseResult Epub::parseCssFiles(const CssParser::CacheStatus existing
 // means normal ZIP reads should be used. A hard error refuses the open with a
 // user-presentable reason.
 bool Epub::openProtection() {
+  if (filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+    return true;
+  }
   std::string err;
   decryptor = freeink::content::openProtectedBook(filepath, err);
   if (!err.empty()) {
@@ -511,7 +516,11 @@ bool Epub::load(const bool buildIfMissing, const bool skipLoadingCss) {
 
         BookMetadataCache::BookMetadata cachedMetadata = bookMetadataCache->coreMetadata;
         CssParser::ParseResult cssParseResult = CssParser::ParseResult::Error;
-        if (!parseContentOpf(cachedMetadata, /*writeSpineEntries=*/false)) {
+        if (filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+          cssFiles = {"OEBPS/style.css"};
+          bookMetadataCache.reset();
+          cssParseResult = parseCssFiles(cacheStatus);
+        } else if (!parseContentOpf(cachedMetadata, /*writeSpineEntries=*/false)) {
           LOG_ERR("EBP", "Could not parse content.opf from cached bookMetadata for CSS files");
         } else {
           discoverCssFilesFromZip();
@@ -549,6 +558,34 @@ bool Epub::load(const bool buildIfMissing, const bool skipLoadingCss) {
 
   if (Txt::isTxtOrMd(filepath)) {
     return Txt::buildTxtCache(filepath, cachePath, bookMetadataCache);
+  }
+
+  // Embedded flash NET Bible fallback when /bible.epub is not on the SD card
+  if (filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+    LOG_DBG("EBP", "Building spine/TOC cache for embedded flash NET Bible");
+    setupCacheDir();
+    BookMetadataCache::BookMetadata bookMetadata;
+    bookMetadata.title = "NET Bible";
+    bookMetadata.author = "Biblical Studies Press";
+    bookMetadata.language = "en";
+    if (!bookMetadataCache->buildEmbeddedBibleBookBin(bookMetadata, NetBibleData::CHAPTER_UNCOMPRESSED_SIZES)) {
+      LOG_ERR("EBP", "Failed to build embedded Bible book.bin");
+      return false;
+    }
+    if (!skipLoadingCss) {
+      cssFiles = {"OEBPS/style.css"};
+      bookMetadataCache.reset();
+      if (parseCssFiles(cssParser->inspectCache()) != CssParser::ParseResult::Error) {
+        Storage.removeDir((cachePath + "/sections").c_str());
+      }
+    }
+    bookMetadataCache = makeUniqueNoThrow<BookMetadataCache>(cachePath);
+    if (!bookMetadataCache || !bookMetadataCache->load()) {
+      LOG_ERR("EBP", "Failed to reload embedded Bible cache after writing");
+      return false;
+    }
+    LOG_DBG("EBP", "Loaded embedded flash NET Bible");
+    return true;
   }
 
   // Cache doesn't exist or is invalid, build it
@@ -657,6 +694,12 @@ bool Epub::loadMetadata(std::string& title, std::string& author) {
 
   if (Txt::isTxtOrMd(filepath)) {
     title = utf8ComposeNfc(FsHelpers::getFileNameWithoutExtension(filepath));
+    return true;
+  }
+
+  if (filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+    title = "NET Bible";
+    author = "Biblical Studies Press";
     return true;
   }
 
@@ -1130,6 +1173,10 @@ bool Epub::readItemContentsToStream(const std::string& itemHref, Print& out, con
 
   const std::string path = FsHelpers::normalisePath(itemHref);
 
+  if (filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+    return NetBibleData::streamEmbeddedItem(path, out);
+  }
+
   if (decryptor && decryptor->isEncrypted(path)) {
     auto append = [](void* context, const uint8_t* data, size_t size) {
       return static_cast<Print*>(context)->write(data, size) == size;
@@ -1170,6 +1217,9 @@ bool Epub::getItemSize(const std::string& itemHref, size_t* size) const {
     return false;
   }
   const std::string path = FsHelpers::normalisePath(itemHref);
+  if (filepath == BibleCanon::DEFAULT_BIBLE_EPUB_PATH && !Storage.exists(filepath.c_str())) {
+    return NetBibleData::getEmbeddedItemSize(path, size);
+  }
   return ZipFile(filepath).getInflatedFileSize(path.c_str(), size);
 }
 

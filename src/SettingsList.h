@@ -183,32 +183,44 @@ inline SettingInfo buildDictionarySetting(const std::vector<DictionaryEntry>& di
   return s;
 }
 
+struct LongPressMenuOption {
+  StrId label;
+  uint8_t value;
+};
+
+inline std::vector<LongPressMenuOption> longPressMenuOptions() {
+  std::vector<LongPressMenuOption> options;
+  options.reserve(5);
+  options.push_back({StrId::STR_DISABLED, CrossPointSettings::LP_MENU_DISABLED});
+  options.push_back({StrId::STR_BOOKMARK_OPTION, CrossPointSettings::LP_MENU_BOOKMARK});
+  if (BoardConfig::hasHomeKey()) {
+    options.push_back({StrId::STR_READER_MENU, CrossPointSettings::LP_MENU_READER_MENU});
+  }
+  options.push_back({StrId::STR_SAVE_CLIPPING, CrossPointSettings::LP_MENU_CREATE_CLIPPING});
+  options.push_back({StrId::STR_FOOTNOTES, CrossPointSettings::LP_MENU_FOOTNOTES});
+  return options;
+}
+
 inline std::vector<StrId> buildLongPressMenuValues() {
-  std::vector<StrId> values = {StrId::STR_KOSYNC, StrId::STR_DISABLED, StrId::STR_BOOKMARK_OPTION,
-                               StrId::STR_DICTIONARY};
-  values.reserve(CrossPointSettings::LONG_PRESS_MENU_FUNCTION_COUNT);
-  if (BoardConfig::hasHomeKey()) values.push_back(StrId::STR_READER_MENU);
-  values.push_back(StrId::STR_SAVE_CLIPPING);
-  values.push_back(StrId::STR_FOOTNOTES);
+  const auto options = longPressMenuOptions();
+  std::vector<StrId> values;
+  values.reserve(options.size());
+  for (const auto& opt : options) values.push_back(opt.label);
   return values;
 }
 
 inline uint8_t longPressMenuDisplayValue() {
-  const uint8_t raw = SETTINGS.longPressMenuFunction;
-  if (raw <= CrossPointSettings::LP_MENU_DICTIONARY) return raw;
-  if (raw == CrossPointSettings::LP_MENU_READER_MENU) {
-    return BoardConfig::hasHomeKey() ? CrossPointSettings::LP_MENU_READER_MENU : CrossPointSettings::LP_MENU_DISABLED;
+  const auto options = longPressMenuOptions();
+  for (size_t i = 0; i < options.size(); ++i) {
+    if (options[i].value == SETTINGS.longPressMenuFunction) return static_cast<uint8_t>(i);
   }
-  if (raw < CrossPointSettings::LONG_PRESS_MENU_FUNCTION_COUNT) return BoardConfig::hasHomeKey() ? raw : raw - 1;
-  return CrossPointSettings::LP_MENU_DISABLED;
+  return 0;  // Disabled
 }
 
 inline void setLongPressMenuFromDisplayValue(const uint8_t displayValue) {
-  if (displayValue <= CrossPointSettings::LP_MENU_DICTIONARY) {
-    SETTINGS.longPressMenuFunction = displayValue;
-  } else {
-    SETTINGS.longPressMenuFunction = BoardConfig::hasHomeKey() ? displayValue : displayValue + 1;
-  }
+  const auto options = longPressMenuOptions();
+  SETTINGS.longPressMenuFunction =
+      displayValue < options.size() ? options[displayValue].value : CrossPointSettings::LP_MENU_DISABLED;
 }
 
 inline SettingInfo buildLongPressMenuSetting() {
@@ -237,7 +249,6 @@ inline std::vector<ShortPowerButtonOption> shortPowerButtonOptions() {
   // Touch boards without a home key have no button for these shortcuts.
   if (BoardConfig::hasTouch() && !BoardConfig::hasHomeKey()) {
     options.push_back({StrId::STR_BOOKMARK_OPTION, CrossPointSettings::PWR_BOOKMARK});
-    options.push_back({StrId::STR_KOSYNC, CrossPointSettings::PWR_SYNC});
     options.push_back({StrId::STR_READER_MENU, CrossPointSettings::PWR_READER_MENU});
   }
   return options;

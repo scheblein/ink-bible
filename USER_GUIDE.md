@@ -96,20 +96,17 @@ In the **[Controls Settings](#363-controls)** you can configure the power button
 
 To reboot the device (for example after a firmware update or if it's frozen), press and release the Reset button, and then quickly press and hold the Power button for a few seconds.
 
-### First Launch
+### First Launch & Direct-to-Bible Startup
 
-Upon turning the device on for the first time, you will be placed on the **[Home](#31-home-screen)** screen.
-
-> [!NOTE]
-> On subsequent restarts, the firmware will automatically reopen the last book you were reading.
+The complete 66-book NET Bible is embedded directly in the firmware flash. Upon turning the device on (with an SD card inserted for reading progress, layout cache, bookmarks, and clippings), the firmware boots directly into the last open book or the built-in NET Bible (or a custom `/bible.epub` on the SD card if you place one there). Holding **Back** during startup opens the **[Browse Files](#33-browse-files-screen)** screen at `/`.
 
 ---
 
 ## 3. Screens
 
-### 3.1 Home Screen
+### 3.1 Direct Bible Startup & Navigation
 
-The Home screen is the main entry point to the firmware. From here you can navigate to **[Reading Mode](#4-reading-mode)** with the most recently read book, **[Browse Files](#33-browse-files-screen)**, the **[Library](#34-library-screen)**, **[File Transfer](#35-file-transfer-screen)**, or **[Settings](#36-settings)**.
+This firmware boots directly into **[Reading Mode](#4-reading-mode)** instead of a separate Home screen. From the **[Reader Menu](#5-reader-menu)** (press **Confirm** while reading), you can jump to any passage via **Go to Passage**, adjust **Text Settings**, manage **Bookmarks** and **Clippings**, or open **[Settings](#36-settings)** and **[File Transfer](#35-file-transfer-screen)**. Holding **Back** while reading opens **[Browse Files](#33-browse-files-screen)**.
 
 ### 3.2 Reading Mode
 
@@ -674,10 +671,10 @@ See [docs/dictionary.md](docs/dictionary.md) for supported formats, setup, and w
 
 ### System Navigation
 
-* **Return to Home:** Press the **Back** button to close the book and return to the **[Home](#31-home-screen)** screen.
-* **Return to Browse Files:** Press and hold the **Back** button to close the book and return to the **[Browse Files](#33-browse-files-screen)** screen.
-* **Reader Menu:** Press **Confirm** to open the **[Reader Menu](#5-reader-menu)**, which includes chapter navigation, reading options, and more.
-* **Long-press Confirm (configurable):** Holding **Confirm** runs the function chosen by the **Long-press Menu** setting in **[Controls Settings](#363-controls)** — including bookmarks, KOReader Sync, dictionary lookup, or clipping selection. A short press always opens the Reader Menu.
+* **Go to Passage (Book → Chapter → Verse):** Short-press the **Back** button while reading to open the 3-stage **Select Book → Chapter → Verse** picker directly.
+* **Return to Browse Files:** Press and hold the **Back** button while reading to open the **[Browse Files](#33-browse-files-screen)** screen.
+* **Reader Menu:** Press **Confirm** to open the **[Reader Menu](#5-reader-menu)**, which includes **Go to Passage**, **Text Settings**, **Bookmarks**, **Clippings**, **Settings**, and **File Transfer**.
+* **Long-press Confirm (configurable):** Holding **Confirm** runs the function chosen by the **Menu long press** setting in **[Controls Settings](#363-controls)** — including bookmarks, footnotes, or clipping selection. A short press always opens the Reader Menu.
 
 ### Supported Languages
 
@@ -699,30 +696,37 @@ The list menu remembers the selected entry while the book stays open. If that en
 
 Available options include:
 
-- **Select Chapter** – Open the table of contents to jump to a specific chapter (see [Chapter Selection](#51-chapter-selection) below).
+- **Go to Passage** – Open the 3-stage **Book → Chapter → Verse** passage selector for `/bible.epub`, or the table of contents for other EPUBs (see [Passage & Chapter Selection](#51-chapter-selection) below).
+- **Text Settings** – Adjust font family, font size, line spacing, margins, alignment, and hyphenation with live preview.
 - **Links and Footnotes** – Select an internal link on the current page. This option appears when the page contains links.
-- **Look Up** – Select a word on the current page and show its dictionary definition (see [docs/dictionary.md](docs/dictionary.md)). Requires a dictionary to be selected in **Settings → Reader → Dictionary**.
 - **Bluetooth Page Turner** – Toggle Bluetooth for the saved remote. This entry appears after pairing a remote in **Settings → Connectivity → Bluetooth Page Turner** and disappears if that selected remote is forgotten.
+- **Night Mode** – Invert the display polarity for dark-background reading.
+- **Add / Remove Bookmark** – Toggle a bookmark on the current page.
+- **Bookmarks** – Browse and jump to saved bookmarks *(shown when bookmarks exist for the current book)*.
 - **Create Clipping** – Select a range of text on the current page and save it as a highlighted clipping.
 - **View Clippings** – Open this book's saved clippings *(shown after the first clipping is saved)*.
 - **Reading Orientation** – Cycle through screen orientations without leaving the reader.
 - **Auto Turn (Pages Per Minute)** – Cycle through automatic page turn speed options for hands-free reading.
 - **Go to %** – Jump to a specific position in the book by percentage.
 - **Take screenshot** – Save a screenshot of the current page to the `screenshots/` folder.
-- **Show page as QR** – Display a QR code encoding the current reading position.
-- **Go Home** – Close the book and return to the Home screen.
-- **Sync Progress** – Push or pull reading progress with a KOReader sync server (see [KOReader Sync Quick Setup](#367-koreader-sync-quick-setup)). This entry appears when sync credentials are saved or an enabled plugin subscribes to device events. Without sync credentials, it connects to Wi-Fi to send queued plugin events.
-- **Delete Book Cache** – Clear the cached layout data for the current book, forcing a re-index on next open.
+- **Show page as QR** – Display a QR code encoding the current page text.
+- **Settings** – Open the device Settings menu (System, Display, Reader, Controls, Connectivity); pressing **Back** from Settings returns directly to the Bible reader.
+- **File Transfer** – Open Wi-Fi File Transfer (Join a Network or Create Hotspot) to upload `/bible.epub` or manage files in a browser; pressing **Back** returns to the Bible reader.
+- **Delete Book Cache** – Clear the cached layout data for the current book and reload it.
 
 Press **Back** at any time to close the menu and return to your current page.
 
-### 5.1 Chapter Selection
+### 5.1 Passage & Chapter Selection
 
-Accessible by selecting **Chapters** from the Reader Menu.
+Accessible by pressing **Back** (short press) while reading, or by selecting **Go to Passage** from the Reader Menu.
 
-1. Use **Left** (or **Side Up**), or **Right** (or **Side Down**) to highlight the desired chapter.
-2. Press **Confirm** to jump to that chapter.
-3. *Alternatively, press **Back** to cancel and return to your current page.*
+When reading the 1,189-chapter `bible.epub`, a 3-stage **Book → Chapter → Verse** picker opens with the current book and chapter pre-selected:
+1. **Select Book**: Highlight one of the 66 Old/New Testament books and press **Confirm**.
+2. **Select Chapter**: Highlight the chapter number and press **Confirm**.
+3. **Select Verse**: Highlight the verse number and press **Confirm** to jump directly to the page containing that verse.
+4. Pressing **Back** steps up one level (`Verse → Chapter → Book`) and then returns to your current page.
+
+For non-1,189-chapter EPUBs, the standard Table of Contents chapter list is shown.
 
 ---
 
@@ -804,6 +808,6 @@ python3 scripts/debugging_monitor.py --suppress "[SD]"
 
 Press **Ctrl-C** or close the graph window to exit.
 
-If the device is stuck in a bootloop, press and release the Reset button. Then, press and hold on to the configured Back button and the Power Button to boot to the Home Screen.
+If the device is stuck in a bootloop, press and release the Reset button. Then, press and hold on to the configured Back button and the Power Button to boot directly to the Browse Files screen.
 
 There can be issues with broken cache or config. In this case, delete the `.crosspoint` directory on your SD card (or consider deleting only `settings.json`, `state.json`, or `epub_*` cache directories in the `.crosspoint/` folder).
