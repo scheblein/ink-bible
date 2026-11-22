@@ -1,17 +1,103 @@
 name: Compile Release
 
-# Build and attach firmware only after a release is published. The release tag
-# supplies both the source revision and the version in each asset name.
+# Build and attach firmware when a release is published manually, or auto-create
+# and publish a release (tagged from platformio.ini without a 'v' prefix) when
+# a PR is merged to master with a new version.
 
 on:
   release:
     types: [published]
+  push:
+    branches: [master]
 
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.event_name }}-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.meta.outputs.should_build }}
+      tag: ${{ steps.meta.outputs.tag }}
+      ref: ${{ steps.meta.outputs.ref }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      create_release: ${{ steps.meta.outputs.create_release }}
+    steps:
+      - name: Checkout repository
+        if: github.event_name == 'push'
+        uses: actions/checkout@v6
+
+      - name: Resolve release metadata
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "release" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$EVENT_TAG" >> "$GITHUB_OUTPUT"
+            echo "ref=$EVENT_TAG" >> "$GITHUB_OUTPUT"
+            echo "prerelease=${EVENT_PRERELEASE:-false}" >> "$GITHUB_OUTPUT"
+            echo "create_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          version="$(sed -n 's/^version = //p' platformio.ini | head -n1)"
+          if [ -z "$version" ]; then
+            echo "Could not read version from platformio.ini" >&2
+            exit 1
+          fi
+
+          release_exists() {
+            local tag="$1"
+            local status
+            status="$(curl -sS -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/releases/tags/${tag}")"
+            if [ "$status" = "200" ]; then
+              return 0
+            elif [ "$status" = "404" ]; then
+              return 1
+            else
+              echo "Unexpected GitHub API status ($status) checking release '$tag'" >&2
+              exit 1
+            fi
+          }
+
+          if release_exists "$version" || release_exists "v${version}"; then
+            echo "Release for version $version already exists; skipping auto-release."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Guard against a pre-existing git tag pointing at a different commit
+          # (gh release create ignores --target when the tag already exists).
+          tag_refs="$(git ls-remote --tags origin "refs/tags/${version}" "refs/tags/${version}^{}")"
+          if [ -n "$tag_refs" ]; then
+            tag_sha="$(printf '%s\n' "$tag_refs" | awk '/\^\{\}$/ {peeled=$1} !/\^\{\}$/ {direct=$1} END {print (peeled ? peeled : direct)}')"
+            if [ "$tag_sha" != "$GITHUB_SHA" ]; then
+              echo "Tag '$version' already exists at $tag_sha (expected $GITHUB_SHA); refusing to publish mismatched assets." >&2
+              exit 1
+            fi
+          fi
+
+          echo "should_build=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$version" >> "$GITHUB_OUTPUT"
+          echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          echo "create_release=true" >> "$GITHUB_OUTPUT"
+
   build-release:
+    needs: prepare
+    if: needs.prepare.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,16 +115,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ needs.prepare.outputs.ref }}
           submodules: recursive
 
       - name: Validate release version
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          IS_PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
           version="${RELEASE_TAG#v}"
           configured_version="$(sed -n 's/^version = //p' platformio.ini | head -n1)"
-          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+          if [ "$IS_PRERELEASE" = "true" ]; then
             test "$version" = "${configured_version}rc"
           else
             test "$version" = "$configured_version"
@@ -67,7 +154,7 @@ jobs:
 
       - name: Pin pioarduino core inside the platform penv
         env:
-          PIO_ENV: ${{ github.event.release.prerelease && matrix.rc_env || matrix.release_env }}
+          PIO_ENV: ${{ needs.prepare.outputs.prerelease == 'true' && matrix.rc_env || matrix.release_env }}
         run: |
           set -euo pipefail
           # Envs with custom_sdkconfig run a nested `pio run` from
@@ -79,7 +166,7 @@ jobs:
 
       - name: Build CrossPoint
         env:
-          PIO_ENV: ${{ github.event.release.prerelease && matrix.rc_env || matrix.release_env }}
+          PIO_ENV: ${{ needs.prepare.outputs.prerelease == 'true' && matrix.rc_env || matrix.release_env }}
           # Enrollment gate for the LCP service: official releases carry this
           # key, self-builds do not (and lose only LCP). Rotate per release by
           # updating the repo secret; retire old values in the service's
@@ -94,8 +181,8 @@ jobs:
       - name: Prepare firmware asset
         id: asset
         env:
-          PIO_ENV: ${{ github.event.release.prerelease && matrix.rc_env || matrix.release_env }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PIO_ENV: ${{ needs.prepare.outputs.prerelease == 'true' && matrix.rc_env || matrix.release_env }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
           version="${RELEASE_TAG#v}"
           asset="ink-bible-${version}-${{ matrix.device }}.bin"
@@ -112,7 +199,8 @@ jobs:
           compression-level: 0
 
   publish-release:
-    needs: build-release
+    needs: [prepare, build-release]
+    if: needs.prepare.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -124,16 +212,26 @@ jobs:
           pattern: ink-bible-*.bin
           merge-multiple: true
 
-      - name: Attach firmware assets
+      - name: Publish or attach firmware assets
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_REF: ${{ needs.prepare.outputs.ref }}
+          CREATE_RELEASE: ${{ needs.prepare.outputs.create_release }}
         run: |
+          set -euo pipefail
           version="${RELEASE_TAG#v}"
           for device in x3-x4 x4pro x4c; do
             test -f "dist/ink-bible-${version}-${device}.bin"
           done
           test "$(find dist -maxdepth 1 -type f -name 'ink-bible-*.bin' | wc -l)" -eq 3
-          test -s dist/LICENSE
-          gh release upload "$RELEASE_TAG" dist/ink-bible-*.bin dist/LICENSE \
-            --repo "$GITHUB_REPOSITORY" --clobber
+          if [ "$CREATE_RELEASE" = "true" ]; then
+            gh release create "$RELEASE_TAG" dist/ink-bible-*.bin \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$RELEASE_REF" \
+              --title "$RELEASE_TAG" \
+              --generate-notes
+          else
+            gh release upload "$RELEASE_TAG" dist/ink-bible-*.bin \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          fi
