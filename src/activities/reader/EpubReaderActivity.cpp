@@ -49,6 +49,7 @@
 #include "SilentRestart.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/settings/TextSettingsActivity.h"
+#include "activities/util/UserGuideActivity.h"
 #include "clippings/ClippingText.h"
 #include "clippings/ClippingsManager.h"
 #include "components/UITheme.h"
@@ -549,9 +550,10 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
   });
 }
 
-void EpubReaderActivity::openFootnoteSelect(const bool reopenMenuOnCancel) {
+void EpubReaderActivity::openFootnoteSelect(const bool reopenMenuOnCancel, const bool startAtLast,
+                                            const bool autoJumpSingle) {
   if (!section || currentPageFootnotes.empty()) return;
-  if (currentPageFootnotes.size() == 1) {
+  if (autoJumpSingle && currentPageFootnotes.size() == 1) {
     navigateToHref(currentPageFootnotes[0].href, true);
     return;
   }
@@ -564,8 +566,8 @@ void EpubReaderActivity::openFootnoteSelect(const bool reopenMenuOnCancel) {
                                    &orientedMarginLeft);
   orientedMarginTop += SETTINGS.screenMargin;
   orientedMarginLeft += SETTINGS.screenMargin;
-  auto selector = makeUniqueNoThrow<EpubReaderFootnoteSelectActivity>(renderer, mappedInput, std::move(page),
-                                                                      orientedMarginLeft, orientedMarginTop);
+  auto selector = makeUniqueNoThrow<EpubReaderFootnoteSelectActivity>(
+      renderer, mappedInput, std::move(page), orientedMarginLeft, orientedMarginTop, startAtLast);
   if (!selector) {
     LOG_ERR("ERA", "OOM: EpubReaderFootnoteSelectActivity");
     return;
@@ -796,6 +798,11 @@ void EpubReaderActivity::loop() {
     requestUpdate();
   }
 
+  if (showFootnoteMessage && (millis() - footnoteMessageTime) >= ReaderUtils::BOOKMARK_MESSAGE_DURATION_MS) {
+    showFootnoteMessage = false;
+    requestUpdate();
+  }
+
   // While the end-of-book suggestion menu is up it owns Confirm/Back/navigation, so it
   // gets this tick's input first and the long-press shortcuts below stay inert behind it
   // -- a hold there must not drop a bookmark onto the suggestion screen or paint the
@@ -952,7 +959,26 @@ void EpubReaderActivity::loop() {
     return;
   }
 
-  auto [prevTriggered, nextTriggered, fromTilt] = ReaderUtils::detectPageTurn(mappedInput);
+  const bool frontFootnotes = SETTINGS.frontLeftRightOpensFootnotes();
+  const bool remoteClick = mappedInput.hasRemoteClick();
+  if (frontFootnotes && !remoteClick && !endOfBookMenuOpen && !atEndOfBook) {
+    const auto frontButtons = ReaderUtils::getFrontPageTurnButtons(mappedInput);
+    const bool prevFoot = mappedInput.wasReleased(frontButtons.previous);
+    const bool nextFoot = mappedInput.wasReleased(frontButtons.next);
+    if (prevFoot || nextFoot) {
+      if (currentPageFootnotes.empty()) {
+        showFootnoteMessage = true;
+        footnoteMessageTime = millis();
+        requestUpdate();
+      } else {
+        openFootnoteSelect(/*reopenMenuOnCancel=*/false, /*startAtLast=*/prevFoot, /*autoJumpSingle=*/false);
+      }
+      return;
+    }
+  }
+
+  auto [prevTriggered, nextTriggered, fromTilt] =
+      ReaderUtils::detectPageTurn(mappedInput, !frontFootnotes || remoteClick);
   prevTriggered = prevTriggered || touch.prev;
   nextTriggered = nextTriggered || touch.next;
   if (!prevTriggered && !nextTriggered) {
@@ -1211,6 +1237,15 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
     case EpubReaderMenuActivity::MenuAction::FILE_TRANSFER: {
       activityManager.goToFileTransfer();
       return;
+    }
+    case EpubReaderMenuActivity::MenuAction::USER_GUIDE: {
+      auto guide = makeUniqueNoThrow<UserGuideActivity>(renderer, mappedInput);
+      if (!guide) {
+        LOG_ERR("ERA", "OOM: UserGuideActivity");
+        break;
+      }
+      startActivityForResult(std::move(guide), [this](const ActivityResult&) { requestUpdate(); });
+      break;
     }
     case EpubReaderMenuActivity::MenuAction::SETTINGS_MENU: {
       activityManager.goToSettings();
@@ -1871,6 +1906,10 @@ void EpubReaderActivity::renderBook() {
 
   if (showClippingMessage) {
     GUI.drawPopup(renderer, I18N.get(clippingMessage));
+  }
+
+  if (showFootnoteMessage) {
+    GUI.drawPopup(renderer, tr(STR_NO_FOOTNOTES));
   }
 
   pageBufferStale = false;  // the page is back in the framebuffer

@@ -53,6 +53,8 @@ class EpubReaderActivity final : public ReaderActivity {
   bool showClippingMessage = false;
   StrId clippingMessage = StrId::STR_CLIPPING_SAVED;
   unsigned long clippingMessageTime = 0UL;
+  bool showFootnoteMessage = false;
+  unsigned long footnoteMessageTime = 0UL;
   bool currentPageBookmarked = false;
   int idlePrewarmSpine = -1;
   int idlePrewarmPage = -1;
@@ -200,7 +202,7 @@ class EpubReaderActivity final : public ReaderActivity {
   std::string moreRowValue(int row) const;
   void activateMoreRow(int row);
   void openChapterSelection(bool reopenMenuOnCancel);
-  void openFootnoteSelect(bool reopenMenuOnCancel);
+  void openFootnoteSelect(bool reopenMenuOnCancel, bool startAtLast = false, bool autoJumpSingle = true);
   void openDictionaryWordSelect();
   void startClipSelection(int initialX = -1, int initialY = -1,
                           ClipSelectionActivity::Mode mode = ClipSelectionActivity::Mode::Clip);

@@ -30,6 +30,7 @@
 #include "util/BmpViewerActivity.h"
 #include "util/FrontlightPanelActivity.h"
 #include "util/FullScreenMessageActivity.h"
+#include "util/UserGuideActivity.h"
 
 static portMUX_TYPE activityManagerSpinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -359,6 +360,16 @@ void ActivityManager::goHome(HomeMenuItem initialMenuItem, bool cleanInitialRefr
   goToFileBrowser("/");
 }
 void ActivityManager::goToCrashReport() { replaceActivity(std::make_unique<CrashActivity>(renderer, mappedInput)); }
+void ActivityManager::goToWelcome(const bool cleanInitialRefresh) {
+  auto welcome =
+      makeUniqueNoThrow<UserGuideActivity>(renderer, mappedInput, /*welcomeMode=*/true, cleanInitialRefresh);
+  if (!welcome) {
+    LOG_ERR("ACT", "OOM: UserGuideActivity (%zu bytes)", sizeof(UserGuideActivity));
+    goHome(HomeMenuItem::NONE, cleanInitialRefresh);
+    return;
+  }
+  replaceActivity(std::move(welcome));
+}
 
 void ActivityManager::pushActivity(std::unique_ptr<Activity>&& activity) {
   mappedInput.resetHomeButtonInput();

@@ -87,6 +87,7 @@ void EpubReaderMenuActivity::buildMenuItems(std::vector<MenuItem>& items, const 
   items.push_back({MenuAction::ROTATE_SCREEN, StrId::STR_ORIENTATION});
   items.push_back({MenuAction::TEXT_SETTINGS, StrId::STR_TEXT_SETTINGS});
   items.push_back({MenuAction::SETTINGS_MENU, StrId::STR_SETTINGS_TITLE});
+  items.push_back({MenuAction::USER_GUIDE, StrId::STR_USER_GUIDE});
 }
 
 void EpubReaderMenuActivity::toggleBluetooth() {

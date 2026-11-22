@@ -749,6 +749,8 @@ void setup() {
     if (APP_STATE.readerActivityLoadCount == 0) APP_STATE.readerActivityLoadCount = 1;
     APP_STATE.saveToFile();
     activityManager.goToFileBrowser("/");
+  } else if (!APP_STATE.welcomeShown) {
+    activityManager.goToWelcome(needsWakeRefresh);
   } else if (APP_STATE.openEpubPath.empty() || !APP_STATE.lastSleepFromReader) {
     activityManager.goHome(HomeMenuItem::NONE, needsWakeRefresh);
   } else {

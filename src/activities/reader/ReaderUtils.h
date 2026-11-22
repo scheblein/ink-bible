@@ -63,7 +63,7 @@ struct PageTurnResult {
   bool fromTilt;
 };
 
-inline PageTurnResult detectPageTurn(const MappedInputManager& input) {
+inline PageTurnResult detectPageTurn(const MappedInputManager& input, const bool allowFrontButtons = true) {
   const bool usePress = SETTINGS.longPressButtonBehavior == SETTINGS.OFF;
   const bool tiltNext = SETTINGS.tiltPageTurn && halTiltSensor.wasTiltedForward();
   const bool tiltPrev = SETTINGS.tiltPageTurn && halTiltSensor.wasTiltedBack();
@@ -74,13 +74,13 @@ inline PageTurnResult detectPageTurn(const MappedInputManager& input) {
     if (usePress) return input.wasPressed(button);
     return input.wasLongPressed(button, SKIP_HOLD_MS) || input.wasReleased(button);
   };
-  const bool prev =
-      tiltPrev || (pageButtonTriggered(MappedInputManager::Button::PageBack) || pageButtonTriggered(prevButton));
+  const bool prev = tiltPrev || pageButtonTriggered(MappedInputManager::Button::PageBack) ||
+                    (allowFrontButtons && pageButtonTriggered(prevButton));
   const bool powerTurn = SETTINGS.shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::PAGE_TURN &&
                          input.wasReleased(MappedInputManager::Button::Power);
   const bool next = input.homeButtonAction() == HomeButtonAction::NextPage || tiltNext ||
                     pageButtonTriggered(MappedInputManager::Button::PageForward) || powerTurn ||
-                    pageButtonTriggered(nextButton);
+                    (allowFrontButtons && pageButtonTriggered(nextButton));
   return {prev, next, tiltPrev || tiltNext};
 }
 

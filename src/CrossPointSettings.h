@@ -307,10 +307,17 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // EPUB reading orientation settings
   // 0 = portrait (default), 1 = landscape clockwise, 2 = inverted, 3 = landscape counter-clockwise
   uint8_t orientation = PORTRAIT;
+  // Front Left/Right behavior in the EPUB reader
+  enum FRONT_LR_BEHAVIOR : uint8_t {
+    FRONT_LR_PAGE_TURN = 0,
+    FRONT_LR_FOOTNOTES = 1,
+  };
+
   // Button layouts (front layout retained for migration only)
   uint8_t frontButtonLayout = BACK_CONFIRM_LEFT_RIGHT;
   uint8_t sideButtonLayout = PREV_NEXT;
   uint8_t frontButtonFollowOrientation = 0;
+  uint8_t frontLeftRightBehavior = FRONT_LR_FOOTNOTES;
   // Front button remap (logical -> hardware)
   // Used by MappedInputManager to translate logical buttons into physical front buttons.
   uint8_t frontButtonBack = FRONT_HW_BACK;
@@ -437,6 +444,12 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
 
   uint16_t getPowerButtonDuration() const {
     return (shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::SLEEP) ? 10 : 400;
+  }
+  // Keep front page turns active when side buttons are disabled so the reader
+  // cannot lose all physical page-turn buttons.
+  bool frontLeftRightOpensFootnotes() const {
+    return !BoardConfig::hasTouch() && frontLeftRightBehavior == FRONT_LR_FOOTNOTES &&
+           sideButtonLayout != SIDE_BUTTONS_DISABLED;
   }
   int getReaderFontId() const;
 

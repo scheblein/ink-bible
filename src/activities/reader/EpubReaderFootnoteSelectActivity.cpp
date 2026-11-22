@@ -35,6 +35,9 @@ void EpubReaderFootnoteSelectActivity::buildFootnoteLinks() {
       footnoteLinks.push_back({&*link, &footnote});
     }
   }
+  if (startAtLast && !footnoteLinks.empty()) {
+    selected = static_cast<int>(footnoteLinks.size()) - 1;
+  }
 }
 
 void EpubReaderFootnoteSelectActivity::performJump() {

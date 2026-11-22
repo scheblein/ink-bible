@@ -32,6 +32,7 @@
 #include "TextSettingsActivity.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/util/IntervalSelectionActivity.h"
+#include "activities/util/UserGuideActivity.h"
 #include "components/UITheme.h"
 #include "components/UIThemeTokens.h"
 #include "components/UiAppHelpers.h"
@@ -137,6 +138,7 @@ void SettingsActivity::rebuildSettings() {
     addAction(SettingsSection::General, StrId::STR_CHECK_UPDATES, SettingAction::CheckForUpdates);
     addAction(SettingsSection::General, StrId::STR_SD_FIRMWARE_UPDATE, SettingAction::SdFirmwareUpdate);
   }
+  addAction(SettingsSection::General, StrId::STR_USER_GUIDE, SettingAction::UserGuide);
   addAction(SettingsSection::General, StrId::STR_ABOUT, SettingAction::About);
   rebuildRowItems();
 }
@@ -366,6 +368,13 @@ void SettingsActivity::toggleSelectedSetting() {
           startActivityForResult(std::move(activity), nullptr);
         } else {
           LOG_ERR("SETTINGS", "OOM: KeyboardLayoutsActivity");
+        }
+        break;
+      case SettingAction::UserGuide:
+        if (auto activity = makeUniqueNoThrow<UserGuideActivity>(renderer, mappedInput)) {
+          startActivityForResult(std::move(activity), nullptr);
+        } else {
+          LOG_ERR("SETTINGS", "OOM: UserGuideActivity");
         }
         break;
       case SettingAction::About:
