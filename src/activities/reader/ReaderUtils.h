@@ -248,14 +248,17 @@ struct BackNavCallback {
 };
 
 // Returns true if the back button was consumed (caller should return).
-// Long press (>= GO_BACK_OR_HOME_MS):
-// - default: go to file browser
-// - with backShortToFileBrowser: go home
-// Short press (< GO_BACK_OR_HOME_MS):
-// - default: go home
-// - with backShortToFileBrowser: go to file browser.
+// Long press (>= longPressMs): runs onLongPress if provided, otherwise opens file browser.
+// Short press (< longPressMs): runs onShortPress.
 inline bool handleBackNavigation(const MappedInputManager& mappedInput, ActivityManager& activityManager,
-                                 const char* filePath, BackNavCallback goHome) {
+                                 const char* filePath, BackNavCallback onShortPress,
+                                 BackNavCallback onLongPress = {nullptr, nullptr},
+                                 const unsigned long longPressMs = GO_BACK_OR_HOME_MS) {
+  if (mappedInput.homeButtonAction() == HomeButtonAction::FileBrowser) {
+    activityManager.goToFileBrowser(filePath);
+    return true;
+  }
+
   // The reading surface deliberately has no left-edge swipe-to-exit path: in
   // swipe page-turn mode a right swipe must page back instead. Home remains
   // available through the board's dedicated Home gesture/key. Back swipes stay
@@ -266,15 +269,19 @@ inline bool handleBackNavigation(const MappedInputManager& mappedInput, Activity
     return false;
   }
 
-  const bool backTriggered = mappedInput.wasLongPressed(MappedInputManager::Button::Back, GO_BACK_OR_HOME_MS) ||
+  const bool backTriggered = mappedInput.wasLongPressed(MappedInputManager::Button::Back, longPressMs) ||
                              mappedInput.wasReleased(MappedInputManager::Button::Back);
   if (!backTriggered) return false;
 
-  const bool longPress = mappedInput.getHeldTime() >= GO_BACK_OR_HOME_MS;
+  const bool longPress = mappedInput.getHeldTime() >= longPressMs;
   if (longPress) {
-    activityManager.goToFileBrowser(filePath);
+    if (onLongPress.fn) {
+      onLongPress.fn(onLongPress.ctx);
+    } else {
+      activityManager.goToFileBrowser(filePath);
+    }
   } else {
-    goHome.fn(goHome.ctx);
+    onShortPress.fn(onShortPress.ctx);
   }
   return true;
 }

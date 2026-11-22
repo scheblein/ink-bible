@@ -11,13 +11,13 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
 - **All-in-One Flash-Embedded NET Bible**: The entire 66-book Protestant canon (`lib/BibleCanon/NetBibleData.generated.cpp`, ~1.56 MB compressed in `.rodata`) streams directly from internal flash on demand. An SD card is used only for saving reading progress, layout caches, bookmarks, clippings, and custom fonts. *(If you ever place a custom `/bible.epub` on the SD card, it overrides the built-in flash text.)*
 - **Direct-to-Scripture Startup & On-Device Guide**: First boot opens a run-once **Welcome** quick-start card before jumping straight to Genesis 1; subsequent boots resume your last reading position. Reopen the full **User Guide** anytime via **Reader Menu → User Guide** or **Settings → General → User Guide**. Holding **Back** during startup opens the SD Card File Browser at `/`.
 - **3-Stage Passage Picker (`Book → Chapter → Verse`)**:
-  - Press **Back** (short press) while reading — or select **Go to Passage** from the Reader Menu (**Confirm**) — to open the canonical picker:
+  - Press **Confirm** (short press) while reading — or select **Go to Passage** from the Reader Menu (hold **Confirm**) — to open the canonical picker:
     1. **Select Book** (Genesis – Revelation, with chapter counts)
     2. **Select Chapter** (`1 .. N`)
     3. **Select Verse** (`1 .. M`) — jumps directly to the exact page containing that verse.
   - Pressing **Back** inside the picker steps back (`Verse → Chapter → Book → Reading Page`).
 - **Inline Translator & Study Footnotes**: USFM footnotes (`[1]`, `[2]`, ...) are linked in the text. On X3/X4, front **Left / Right** open inline footnote selection on the current page by default (configurable in **Settings → Controls → Front buttons → Left / Right buttons**, automatically falling back to page turns if side buttons are disabled); pressing **Back** returns to your verse. Also accessible via **Reader Menu → Links and Footnotes**.
-- **Bookmarks, Highlights & Clippings**: Bookmark any page or select and save verse ranges as highlighted clippings (exported to `/My Clippings.txt` on the SD card).
+- **Bookmarks, Highlights & Clippings**: Hold **Back** to toggle a bookmark on the current page, short-press **Back** to open your Bookmarks list and hop between passages, or select and save verse ranges as highlighted clippings (exported to `/My Clippings.txt` on the SD card).
 - **Clean Typography & Layout**:
   - Poetry indentation, Psalm superscriptions, section headings, small-caps divine name (`LORD`), and italics.
   - Adjustable font family, point size, line spacing, margins, paragraph alignment, night mode (inverted display), and reading orientation.
@@ -39,11 +39,13 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
 | **Next / Previous Page** | Down / Up side buttons (or Front Right / Left if set to Page turn) |
 | **Select Footnotes on Page** | Front Left / Right (default; configurable in Controls) |
 | **Next / Previous Chapter** | Long-press Next / Previous Page |
-| **Go to Passage (`Book → Chapter → Verse`)** | Short-press **Back** (or **Confirm → Go to Passage**) |
-| **Reader Menu** | Short-press **Confirm** |
+| **Go to Passage (`Book → Chapter → Verse`)** | Short-press **Confirm** (or Reader Menu → **Go to Passage**) |
+| **Reader Menu** | Long-press **Confirm** |
+| **Bookmarks (Hop Between Passages)** | Short-press **Back** (or Reader Menu → **Bookmarks**) |
+| **Toggle Bookmark** | Long-press **Back** (or Reader Menu → **Toggle Bookmark**) |
+| **Switch Bible (SD File Browser)** | Reader Menu → **Switch Bible** (or hold **Back** during power-on boot) |
 | **Return from Footnote** | Short-press **Back** while viewing a footnote |
 | **Sleep / Wake** | Long-press **Power** |
-| **SD File Browser (Escape Hatch)** | Hold **Back** during power-on boot |
 
 ---
 

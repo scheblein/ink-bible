@@ -202,6 +202,7 @@ class EpubReaderActivity final : public ReaderActivity {
   std::string moreRowValue(int row) const;
   void activateMoreRow(int row);
   void openChapterSelection(bool reopenMenuOnCancel);
+  void openBookmarks(bool reopenMenuOnCancel);
   void openFootnoteSelect(bool reopenMenuOnCancel, bool startAtLast = false, bool autoJumpSingle = true);
   void openDictionaryWordSelect();
   void startClipSelection(int initialX = -1, int initialY = -1,
@@ -210,10 +211,10 @@ class EpubReaderActivity final : public ReaderActivity {
   void openClippings();
   void applyProgressChange(const ProgressChangeResult& progress);
   bool launchKOReaderSync();
-  unsigned long confirmLongPressThreshold() const;
   void toggleAutoPageTurn(uint8_t selectedPageTurnOption);
   void loadCachedBookmarks();
   void addBookmark();
+  void toggleBookmarkWithFeedback();
   void updateBookmarkFlag();
 
   void navigateToHref(const std::string& href, bool savePosition = false);

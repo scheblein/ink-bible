@@ -813,43 +813,20 @@ void EpubReaderActivity::loop() {
   }
   const bool endOfBookMenuOpen = endOfBookMenuActive();
 
-  const unsigned long confirmHoldMs = confirmLongPressThreshold();
   // wasLongPressed() suppresses the release that follows it, so leave it unpolled while
   // the end-of-book menu owns Confirm -- otherwise the menu never sees that release.
-  const bool confirmLongPressed = !endOfBookMenuOpen && confirmHoldMs != 0 &&
-                                  mappedInput.wasLongPressed(MappedInputManager::Button::Confirm, confirmHoldMs);
+  const bool confirmLongPressed =
+      !endOfBookMenuOpen &&
+      mappedInput.wasLongPressed(MappedInputManager::Button::Confirm, ReaderUtils::BOOKMARK_HOLD_MS);
   const bool confirmReleased = mappedInput.wasReleased(MappedInputManager::Button::Confirm);
   if (confirmLongPressed) {
-    switch (SETTINGS.longPressMenuFunction) {
-      case CrossPointSettings::LP_MENU_BOOKMARK:
-        addBookmark();
-        showBookmarkMessage = true;
-        bookmarkMessageTime = millis();
-        requestUpdate();
-        break;
-      case CrossPointSettings::LP_MENU_KOSYNC:
-        if (launchKOReaderSync()) {
-          return;
-        }
-        break;
-      case CrossPointSettings::LP_MENU_DICTIONARY:
-        openDictionaryWordSelect();
-        return;
-      case CrossPointSettings::LP_MENU_CREATE_CLIPPING:
-        startClipSelection();
-        return;
-      case CrossPointSettings::LP_MENU_FOOTNOTES:
-        if (footnoteDepth > 0) {
-          restoreSavedPosition();
-        } else {
-          openFootnoteSelect(false);
-        }
-        return;
-      case CrossPointSettings::LP_MENU_READER_MENU:
-      case CrossPointSettings::LP_MENU_DISABLED:
-      default:
-        break;
+    if (usesToolbarMenu() && section) {
+      pendingManualTurn = 0;
+      openOverlay(Overlay::Toolbar);
+    } else {
+      openReaderMenu();
     }
+    return;  // no build step before the menu shows
   }
 
   if (!endOfBookMenuOpen) {
@@ -898,8 +875,8 @@ void EpubReaderActivity::loop() {
   }
 
   const bool touchMenu = ReaderUtils::isTouchMenuGesture(renderer, mappedInput);
-  if (confirmReleased || touchMenu) {
-    if (touchMenu) haptic_feedback::touchAction();
+  if (touchMenu) {
+    haptic_feedback::touchAction();
     // Toolbar style: the page is on screen and in the framebuffer, so paint the
     // toolbar over it (one refresh) instead of pushing a full-screen menu.
     if (usesToolbarMenu() && section) {
@@ -911,15 +888,25 @@ void EpubReaderActivity::loop() {
     return;  // no build step before the menu shows
   }
 
+  if (confirmReleased) {
+    openChapterSelection(false);
+    return;
+  }
+
   if (footnoteDepth > 0 && mappedInput.wasReleased(MappedInputManager::Button::Back) &&
-      mappedInput.getHeldTime() < ReaderUtils::GO_BACK_OR_HOME_MS) {
+      mappedInput.getHeldTime() < ReaderUtils::BOOKMARK_HOLD_MS) {
     restoreSavedPosition();
     return;
   }
 
   if (ReaderUtils::handleBackNavigation(
           mappedInput, activityManager, bookPath.c_str(),
-          {this, [](void* ctx) { static_cast<EpubReaderActivity*>(ctx)->openChapterSelection(false); }})) {
+          {this, [](void* ctx) { static_cast<EpubReaderActivity*>(ctx)->openBookmarks(false); }},
+          endOfBookMenuOpen
+              ? ReaderUtils::BackNavCallback{nullptr, nullptr}
+              : ReaderUtils::BackNavCallback{
+                    this, [](void* ctx) { static_cast<EpubReaderActivity*>(ctx)->toggleBookmarkWithFeedback(); }},
+          endOfBookMenuOpen ? ReaderUtils::GO_BACK_OR_HOME_MS : ReaderUtils::BOOKMARK_HOLD_MS)) {
     return;
   }
 
@@ -1176,18 +1163,34 @@ void EpubReaderActivity::openChapterSelection(const bool reopenMenuOnCancel) {
                          });
 }
 
-void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction action) {
-  auto progressChangeResultHandler = [this](const ActivityResult& result) {
-    loadCachedBookmarks();
-    if (result.isCancelled) {
+void EpubReaderActivity::openBookmarks(const bool reopenMenuOnCancel) {
+  if (!epub) return;
+  auto activity = makeUniqueNoThrow<EpubReaderBookmarksActivity>(renderer, mappedInput, epub, epub->getPath());
+  if (!activity) {
+    LOG_ERR("ERA", "OOM: EpubReaderBookmarksActivity");
+    if (reopenMenuOnCancel) {
       openReaderMenu();
     } else {
+      requestUpdate();
+    }
+    return;
+  }
+  startActivityForResult(std::move(activity), [this, reopenMenuOnCancel](const ActivityResult& result) {
+    loadCachedBookmarks();
+    if (result.isCancelled) {
+      if (reopenMenuOnCancel) {
+        openReaderMenu();
+      } else {
+        requestUpdate();
+      }
+    } else {
       const auto& sync = std::get<ProgressChangeResult>(result.data);
-
       applyProgressChange(sync);
     }
-  };
+  });
+}
 
+void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction action) {
   switch (action) {
     case EpubReaderMenuActivity::MenuAction::SELECT_CHAPTER: {
       openChapterSelection(true);
@@ -1238,6 +1241,10 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
       activityManager.goToFileTransfer();
       return;
     }
+    case EpubReaderMenuActivity::MenuAction::BROWSE_FILES: {
+      activityManager.goToFileBrowser(bookPath.c_str());
+      return;
+    }
     case EpubReaderMenuActivity::MenuAction::USER_GUIDE: {
       auto guide = makeUniqueNoThrow<UserGuideActivity>(renderer, mappedInput);
       if (!guide) {
@@ -1252,9 +1259,7 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
       return;
     }
     case EpubReaderMenuActivity::MenuAction::BOOKMARKS: {
-      startActivityForResult(
-          std::make_unique<EpubReaderBookmarksActivity>(renderer, mappedInput, epub, epub->getPath()),
-          progressChangeResultHandler);
+      openBookmarks(true);
       break;
     }
     case EpubReaderMenuActivity::MenuAction::SAVE_CLIPPING: {
@@ -1272,22 +1277,12 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
   }
 }
 
-unsigned long EpubReaderActivity::confirmLongPressThreshold() const {
-  // The setting is hidden on these boards, so a stale stored value must not act.
-  if (BoardConfig::hasTouch()) return 0;
-  switch (SETTINGS.longPressMenuFunction) {
-    case CrossPointSettings::LP_MENU_BOOKMARK:
-    case CrossPointSettings::LP_MENU_DICTIONARY:
-    case CrossPointSettings::LP_MENU_CREATE_CLIPPING:
-    case CrossPointSettings::LP_MENU_FOOTNOTES:
-      return ReaderUtils::BOOKMARK_HOLD_MS;
-    case CrossPointSettings::LP_MENU_KOSYNC:
-      return KOREADER_STORE.hasCredentials() ? ReaderUtils::GO_HOME_MS : 0;
-    case CrossPointSettings::LP_MENU_READER_MENU:
-    case CrossPointSettings::LP_MENU_DISABLED:
-    default:
-      return 0;
-  }
+void EpubReaderActivity::toggleBookmarkWithFeedback() {
+  if (!section || !epub || isAtEndOfBook()) return;
+  addBookmark();
+  showBookmarkMessage = true;
+  bookmarkMessageTime = millis();
+  requestUpdate();
 }
 
 bool EpubReaderActivity::launchKOReaderSync() { return false; }
@@ -3126,7 +3121,7 @@ void EpubReaderActivity::activateMoreRow(int row) {
   // leave it entirely. In-place actions would otherwise leave the closed panel
   // on screen.
   if (action != MA::GO_HOME && action != MA::DELETE_CACHE && action != MA::FILE_TRANSFER &&
-      action != MA::SETTINGS_MENU) {
+      action != MA::BROWSE_FILES && action != MA::SETTINGS_MENU) {
     requestUpdate();
   }
 }

@@ -7,7 +7,7 @@ options depend on the device.
 - **Power button** contains **Short click** and **Double click**.
 - **Front buttons** contains remapping, **Left / Right buttons** (`Page turn` or
   `Links and Footnotes`, falling back to page turns if side buttons are disabled),
-  orientation, Back behavior, and the two long-press settings at the bottom.
+  orientation, Back behavior, and the page-turn long-press setting at the bottom.
 - **Side buttons** contains the reader layout, orientation, and page-turn long press.
 - **Taps and gestures** contains **Touch controls while reading** and the page/menu gestures.
 
