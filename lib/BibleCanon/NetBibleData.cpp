@@ -17,8 +17,7 @@ int parseChapterSpineIndex(std::string_view href) {
     href.remove_prefix(slash + 1);
   }
   // Expected format: "B01_C001.xhtml" (14 chars)
-  if (href.size() != 14 || href[0] != 'B' || href[3] != '_' || href[4] != 'C' ||
-      href.substr(8) != ".xhtml") {
+  if (href.size() != 14 || href[0] != 'B' || href[3] != '_' || href[4] != 'C' || href.substr(8) != ".xhtml") {
     return -1;
   }
   const auto isDigit = [](const char c) { return c >= '0' && c <= '9'; };
