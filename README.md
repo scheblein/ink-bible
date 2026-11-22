@@ -28,7 +28,7 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
   - Bluetooth page turner remote support (**Settings → Connectivity → Bluetooth Page Turner**).
 - **Wireless File Transfer & OTA Updates**:
   - Built-in Wi-Fi Web UI (**Settings → Connectivity → File Transfer**, hotspot SSID `Ink-Bible` at `http://inkbible.local/` or station mode) for managing clippings, settings, and SD fonts.
-  - Over-the-air (OTA) firmware updates from [GitHub Releases](https://github.com/scheblein/ink-bible/releases) or SD card `.bin` updates.
+  - Over-the-air (OTA) firmware updates over Wi-Fi (**Settings → System → Check for Updates**) from [GitHub Releases](https://github.com/scheblein/ink-bible/releases), or offline SD card `.bin` updates.
 
 ---
 
@@ -116,6 +116,12 @@ ctest --test-dir build/test --output-on-failure
 # Build X3/X4 firmware binary
 pio run -e default
 ```
+
+### Releasing
+
+1. Bump `version` in `platformio.ini` on `develop` (e.g. `1.0.2`).
+2. Open and merge a pull request from `develop` into `master`.
+3. The **Compile Release** workflow (`.github/workflows/release.yml`) builds `x3-x4`, `x4pro`, and `x4c` binaries, tags the `master` merge commit as `<version>` (without a `v` prefix), and publishes the GitHub Release with all firmware assets and `LICENSE` attached.
 
 ---
 
