@@ -106,7 +106,7 @@ The complete 66-book NET Bible is embedded directly in the firmware flash. Upon 
 
 ### 3.1 Direct Bible Startup & Navigation
 
-This firmware boots directly into **[Reading Mode](#4-reading-mode)** instead of a separate Home screen. From the **[Reader Menu](#5-reader-menu)** (press **Confirm** while reading), you can jump to any passage via **Go to Passage**, adjust **Text Settings**, manage **Bookmarks** and **Clippings**, or open **[Settings](#36-settings)** and **[File Transfer](#35-file-transfer-screen)**. Holding **Back** while reading opens **[Browse Files](#33-browse-files-screen)**.
+This firmware boots directly into **[Reading Mode](#4-reading-mode)** instead of a separate Home screen. Short-press **Confirm** to jump to any passage via **Go to Passage**, or hold **Confirm** to open the **[Reader Menu](#5-reader-menu)** for **Text Settings**, **Bookmarks**, **Clippings**, **Switch Bible**, **User Guide**, and **[Settings](#36-settings)**. Holding **Back** during startup opens **[Browse Files](#33-browse-files-screen)**.
 
 ### 3.2 Reading Mode
 
@@ -671,10 +671,10 @@ See [docs/dictionary.md](docs/dictionary.md) for supported formats, setup, and w
 
 ### System Navigation
 
-* **Go to Passage (Book → Chapter → Verse):** Short-press the **Back** button while reading to open the 3-stage **Select Book → Chapter → Verse** picker directly.
-* **Return to Browse Files:** Press and hold the **Back** button while reading to open the **[Browse Files](#33-browse-files-screen)** screen.
-* **Reader Menu:** Press **Confirm** to open the **[Reader Menu](#5-reader-menu)**, which includes **Go to Passage**, **Text Settings**, **Bookmarks**, **Clippings**, **Settings**, and **File Transfer**.
-* **Long-press Confirm (configurable):** Holding **Confirm** runs the function chosen by the **Menu long press** setting in **[Controls Settings](#363-controls)** — including bookmarks, footnotes, or clipping selection. A short press always opens the Reader Menu.
+* **Go to Passage (Book → Chapter → Verse):** Short-press **Confirm** while reading to open the 3-stage **Select Book → Chapter → Verse** picker directly.
+* **Reader Menu:** Hold **Confirm** while reading to open the **[Reader Menu](#5-reader-menu)**, which includes **Go to Passage**, **Text Settings**, **Bookmarks**, **Clippings**, **Switch Bible**, **User Guide**, and **[Settings](#36-settings)**.
+* **Bookmarks:** Short-press **Back** while reading to open your Bookmarks list. Hold **Back** to toggle a bookmark on the current page.
+* **Switch Bible (Browse Files):** Open **Reader Menu → Switch Bible**, or hold **Back** during power-on startup to open the **[Browse Files](#33-browse-files-screen)** screen.
 
 ### Supported Languages
 
@@ -690,7 +690,7 @@ The UI includes Arabic and Hebrew (menus use built-in fonts with presentation-fo
 
 ## 5. Reader Menu
 
-Press **Confirm** while reading to open the Reader Menu. From here you can access reading utilities and navigation options without leaving the book.
+Hold **Confirm** while reading to open the Reader Menu. From here you can access reading utilities and navigation options without leaving the book.
 
 The list menu remembers the selected entry while the book stays open. If that entry is no longer available, the cursor returns to the first entry. Closing the book resets the selection.
 
@@ -706,19 +706,15 @@ Available options include:
 - **Create Clipping** – Select a range of text on the current page and save it as a highlighted clipping.
 - **View Clippings** – Open this book's saved clippings *(shown after the first clipping is saved)*.
 - **Reading Orientation** – Cycle through screen orientations without leaving the reader.
-- **Auto Turn (Pages Per Minute)** – Cycle through automatic page turn speed options for hands-free reading.
-- **Go to %** – Jump to a specific position in the book by percentage.
-- **Take screenshot** – Save a screenshot of the current page to the `screenshots/` folder.
-- **Show page as QR** – Display a QR code encoding the current page text.
+- **Switch Bible** – Open the SD card file browser to choose another EPUB Bible.
+- **User Guide** – Reopen the on-device quick-start and controls guide.
 - **Settings** – Open the device Settings menu (System, Display, Reader, Controls, Connectivity); pressing **Back** from Settings returns directly to the Bible reader.
-- **File Transfer** – Open Wi-Fi File Transfer (Join a Network or Create Hotspot) to upload `/bible.epub` or manage files in a browser; pressing **Back** returns to the Bible reader.
-- **Delete Book Cache** – Clear the cached layout data for the current book and reload it.
 
 Press **Back** at any time to close the menu and return to your current page.
 
 ### 5.1 Passage & Chapter Selection
 
-Accessible by pressing **Back** (short press) while reading, or by selecting **Go to Passage** from the Reader Menu.
+Accessible by pressing **Confirm** (short press) while reading, or by selecting **Go to Passage** from the Reader Menu.
 
 When reading the 1,189-chapter `bible.epub`, a 3-stage **Book → Chapter → Verse** picker opens with the current book and chapter pre-selected:
 1. **Select Book**: Highlight one of the 66 Old/New Testament books and press **Confirm**.

@@ -9,14 +9,14 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
 ## Key Features
 
 - **All-in-One Flash-Embedded NET Bible**: The entire 66-book Protestant canon (`lib/BibleCanon/NetBibleData.generated.cpp`, ~1.56 MB compressed in `.rodata`) streams directly from internal flash on demand. An SD card is used only for saving reading progress, layout caches, bookmarks, clippings, and custom fonts. *(If you ever place a custom `/bible.epub` on the SD card, it overrides the built-in flash text.)*
-- **Direct-to-Scripture Startup & On-Device Guide**: First boot opens a run-once **Welcome** quick-start card before jumping straight to Genesis 1; subsequent boots resume your last reading position. Reopen the full **User Guide** anytime via **Reader Menu → User Guide** or **Settings → General → User Guide**. Holding **Back** during startup opens the SD Card File Browser at `/`.
+- **Direct-to-Scripture Startup & On-Device Guide**: First boot opens a run-once **Welcome** quick-start card before jumping straight to Genesis 1; subsequent boots resume your last reading position. Reopen the full **User Guide** anytime via **Reader Menu → User Guide** or **Settings → System → User Guide**. Holding **Back** during startup opens the SD Card File Browser at `/`.
 - **3-Stage Passage Picker (`Book → Chapter → Verse`)**:
   - Press **Confirm** (short press) while reading — or select **Go to Passage** from the Reader Menu (hold **Confirm**) — to open the canonical picker:
     1. **Select Book** (Genesis – Revelation, with chapter counts)
     2. **Select Chapter** (`1 .. N`)
     3. **Select Verse** (`1 .. M`) — jumps directly to the exact page containing that verse.
   - Pressing **Back** inside the picker steps back (`Verse → Chapter → Book → Reading Page`).
-- **Inline Translator & Study Footnotes**: USFM footnotes (`[1]`, `[2]`, ...) are linked in the text. On X3/X4, front **Left / Right** open inline footnote selection on the current page by default (configurable in **Settings → Controls → Front buttons → Left / Right buttons**, automatically falling back to page turns if side buttons are disabled); pressing **Back** returns to your verse. Also accessible via **Reader Menu → Links and Footnotes**.
+- **Inline Translator & Study Footnotes**: USFM footnotes (`[1]`, `[2]`, ...) are linked in the text. On X3/X4, front **Left / Right** open inline footnote selection on the current page by default (configurable in **Settings → Controls → Left / Right buttons**, automatically falling back to page turns if side buttons are disabled); pressing **Back** returns to your verse. Also accessible via **Reader Menu → Links and Footnotes**.
 - **Bookmarks, Highlights & Clippings**: Hold **Back** to toggle a bookmark on the current page, short-press **Back** to open your Bookmarks list and hop between passages, or select and save verse ranges as highlighted clippings (exported to `/My Clippings.txt` on the SD card).
 - **Clean Typography & Layout**:
   - Poetry indentation, Psalm superscriptions, section headings, small-caps divine name (`LORD`), and italics.
@@ -121,7 +121,7 @@ pio run -e default
 
 1. Bump `version` in `platformio.ini` on `develop` (e.g. `1.0.2`).
 2. Open and merge a pull request from `develop` into `master`.
-3. The **Compile Release** workflow (`.github/workflows/release.yml`) builds `x3-x4`, `x4pro`, and `x4c` binaries, tags the `master` merge commit as `<version>` (without a `v` prefix), and publishes the GitHub Release with all firmware assets and `LICENSE` attached.
+3. The **Compile Release** workflow (`.github/workflows/release.yml`) builds `x3-x4`, `x4pro`, and `x4c` binaries, tags the `master` merge commit as `<version>` (without a `v` prefix), and publishes the GitHub Release with all firmware assets attached.
 
 ---
 

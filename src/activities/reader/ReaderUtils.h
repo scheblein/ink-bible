@@ -63,24 +63,35 @@ struct PageTurnResult {
   bool fromTilt;
 };
 
+struct FrontPageTurnButtons {
+  MappedInputManager::Button previous;
+  MappedInputManager::Button next;
+};
+
+inline FrontPageTurnButtons getFrontPageTurnButtons(const MappedInputManager& input) {
+  const bool swapFront = input.isNavDirectionSwapped();
+  return {
+      swapFront ? MappedInputManager::Button::Right : MappedInputManager::Button::Left,
+      swapFront ? MappedInputManager::Button::Left : MappedInputManager::Button::Right,
+  };
+}
+
 inline PageTurnResult detectPageTurn(const MappedInputManager& input, const bool allowFrontButtons = true) {
   const bool usePress = SETTINGS.longPressButtonBehavior == SETTINGS.OFF;
   const bool tiltNext = SETTINGS.tiltPageTurn && halTiltSensor.wasTiltedForward();
   const bool tiltPrev = SETTINGS.tiltPageTurn && halTiltSensor.wasTiltedBack();
-  const bool swapFront = input.isNavDirectionSwapped();
-  const auto prevButton = swapFront ? MappedInputManager::Button::Right : MappedInputManager::Button::Left;
-  const auto nextButton = swapFront ? MappedInputManager::Button::Left : MappedInputManager::Button::Right;
+  const auto frontButtons = getFrontPageTurnButtons(input);
   const auto pageButtonTriggered = [&](const MappedInputManager::Button button) {
     if (usePress) return input.wasPressed(button);
     return input.wasLongPressed(button, SKIP_HOLD_MS) || input.wasReleased(button);
   };
   const bool prev = tiltPrev || pageButtonTriggered(MappedInputManager::Button::PageBack) ||
-                    (allowFrontButtons && pageButtonTriggered(prevButton));
+                    (allowFrontButtons && pageButtonTriggered(frontButtons.previous));
   const bool powerTurn = SETTINGS.shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::PAGE_TURN &&
                          input.wasReleased(MappedInputManager::Button::Power);
   const bool next = input.homeButtonAction() == HomeButtonAction::NextPage || tiltNext ||
                     pageButtonTriggered(MappedInputManager::Button::PageForward) || powerTurn ||
-                    (allowFrontButtons && pageButtonTriggered(nextButton));
+                    (allowFrontButtons && pageButtonTriggered(frontButtons.next));
   return {prev, next, tiltPrev || tiltNext};
 }
 
@@ -254,11 +265,6 @@ inline bool handleBackNavigation(const MappedInputManager& mappedInput, Activity
                                  const char* filePath, BackNavCallback onShortPress,
                                  BackNavCallback onLongPress = {nullptr, nullptr},
                                  const unsigned long longPressMs = GO_BACK_OR_HOME_MS) {
-  if (mappedInput.homeButtonAction() == HomeButtonAction::FileBrowser) {
-    activityManager.goToFileBrowser(filePath);
-    return true;
-  }
-
   // The reading surface deliberately has no left-edge swipe-to-exit path: in
   // swipe page-turn mode a right swipe must page back instead. Home remains
   // available through the board's dedicated Home gesture/key. Back swipes stay

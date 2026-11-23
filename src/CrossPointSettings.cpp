@@ -105,11 +105,16 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   if (dictionaryName[0] != '\0') {
     doc["dictionaryName"] = dictionaryName;
   }
-  // The displayed option list varies by board, so this setting uses a dynamic
-  // display-index mapping and is skipped by the generic persistence loop.
+  // The displayed option list varies by board, so these settings use dynamic
+  // display-index mappings and are skipped by the generic persistence loop.
   doc["sleepScreen"] = sleepScreen;
   doc["longPressMenuFunction"] = longPressMenuFunction;
   doc["shortPwrBtn"] = shortPwrBtn;
+  if (BoardConfig::hasHomeKey()) {
+    doc["homeButtonTapAction"] = homeButtonTapAction;
+    doc["homeButtonDoubleTapAction"] = homeButtonDoubleTapAction;
+    doc["homeButtonLongPressAction"] = homeButtonLongPressAction;
+  }
 
   // Language -- managed by LanguageSelectActivity, not in SettingsList.
   // Stored as ISO code string ("EN", "DE", ...) for stability across enum reorders.
@@ -262,6 +267,17 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   longPressMenuFunction = clamp(doc["longPressMenuFunction"] | (uint8_t)LP_MENU_DISABLED,
                                 (uint8_t)LONG_PRESS_MENU_FUNCTION_COUNT, (uint8_t)LP_MENU_DISABLED);
   shortPwrBtn = clamp(doc["shortPwrBtn"] | (uint8_t)IGNORE, (uint8_t)SHORT_PWRBTN_COUNT, (uint8_t)IGNORE);
+  if (BoardConfig::hasHomeKey()) {
+    constexpr uint8_t HOME_ACTION_COUNT = static_cast<uint8_t>(HomeButtonAction::Count);
+    homeButtonTapAction = clamp(doc["homeButtonTapAction"] | static_cast<uint8_t>(HomeButtonAction::Home),
+                                HOME_ACTION_COUNT, static_cast<uint8_t>(HomeButtonAction::Home));
+    homeButtonDoubleTapAction =
+        clamp(doc["homeButtonDoubleTapAction"] | static_cast<uint8_t>(HomeButtonAction::ToggleFrontlight),
+              HOME_ACTION_COUNT, static_cast<uint8_t>(HomeButtonAction::ToggleFrontlight));
+    homeButtonLongPressAction =
+        clamp(doc["homeButtonLongPressAction"] | static_cast<uint8_t>(HomeButtonAction::ReaderMenu), HOME_ACTION_COUNT,
+              static_cast<uint8_t>(HomeButtonAction::ReaderMenu));
+  }
   if (BoardConfig::hasHomeKey() && doc["homeButtonLongPressAction"].isNull() &&
       !doc["longPressMenuFunction"].isNull()) {
     static constexpr HomeButtonAction LEGACY[] = {HomeButtonAction::Sync,       HomeButtonAction::Ignore,

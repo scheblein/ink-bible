@@ -2,6 +2,8 @@
 
 #include <I18n.h>
 
+#include <cstring>
+
 #include "CrossPointSettings.h"
 
 namespace home_button {
@@ -21,15 +23,22 @@ inline constexpr ActionOption ACTION_OPTIONS[] = {
     {StrId::STR_READER_MENU, HomeButtonAction::ReaderMenu},
     {StrId::STR_TOGGLE_FRONTLIGHT, HomeButtonAction::ToggleFrontlight},
     {StrId::STR_SAVE_CLIPPING, HomeButtonAction::CreateClipping},
-    {StrId::STR_BROWSE_FILES, HomeButtonAction::FileBrowser},
 };
 inline constexpr size_t ACTION_OPTION_COUNT = sizeof(ACTION_OPTIONS) / sizeof(ACTION_OPTIONS[0]);
 
 inline constexpr StrId ACTION_LABELS[ACTION_OPTION_COUNT] = {
     StrId::STR_HOME_SHORTCUT,     StrId::STR_IGNORE,        StrId::STR_PAGE_TURN,       StrId::STR_FORCE_REFRESH,
     StrId::STR_FOOTNOTES,         StrId::STR_CONFIRM,       StrId::STR_BOOKMARK_OPTION, StrId::STR_READER_MENU,
-    StrId::STR_TOGGLE_FRONTLIGHT, StrId::STR_SAVE_CLIPPING, StrId::STR_BROWSE_FILES,
+    StrId::STR_TOGGLE_FRONTLIGHT, StrId::STR_SAVE_CLIPPING,
 };
+
+constexpr bool labelsMatchOptions() {
+  for (size_t i = 0; i < ACTION_OPTION_COUNT; ++i) {
+    if (ACTION_LABELS[i] != ACTION_OPTIONS[i].label) return false;
+  }
+  return true;
+}
+static_assert(labelsMatchOptions());
 
 inline int displayIndexForAction(const uint8_t rawAction) {
   for (size_t i = 0; i < ACTION_OPTION_COUNT; ++i) {
@@ -53,5 +62,12 @@ inline constexpr uint8_t CrossPointSettings::* FIELDS[] = {&CrossPointSettings::
 inline constexpr const char* KEYS[] = {"homeButtonTapAction", "homeButtonDoubleTapAction", "homeButtonLongPressAction"};
 inline bool isSetting(uint8_t CrossPointSettings::* field) {
   return field == FIELDS[0] || field == FIELDS[1] || field == FIELDS[2];
+}
+inline bool isSettingKey(const char* key) {
+  if (!key) return false;
+  for (const char* k : KEYS) {
+    if (std::strcmp(key, k) == 0) return true;
+  }
+  return false;
 }
 }  // namespace home_button
