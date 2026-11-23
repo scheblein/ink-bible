@@ -251,6 +251,7 @@ class EpubReaderActivity final : public ReaderActivity {
   int getProgressBasisPoints() const override;
   void renderBook() override;
   void onEndOfBookRendered() override;
+  bool skipBook(int delta);
 
  public:
   explicit EpubReaderActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, std::string bookPath,

@@ -312,13 +312,14 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   enum FRONT_LR_BEHAVIOR : uint8_t {
     FRONT_LR_PAGE_TURN = 0,
     FRONT_LR_FOOTNOTES = 1,
+    FRONT_LR_CHAPTER_BOOK = 2,
   };
 
   // Button layouts (front layout retained for migration only)
   uint8_t frontButtonLayout = BACK_CONFIRM_LEFT_RIGHT;
   uint8_t sideButtonLayout = PREV_NEXT;
   uint8_t frontButtonFollowOrientation = 0;
-  uint8_t frontLeftRightBehavior = FRONT_LR_FOOTNOTES;
+  uint8_t frontLeftRightBehavior = FRONT_LR_CHAPTER_BOOK;
   // Front button remap (logical -> hardware)
   // Used by MappedInputManager to translate logical buttons into physical front buttons.
   uint8_t frontButtonBack = FRONT_HW_BACK;
@@ -448,9 +449,18 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   }
   // Keep front page turns active when side buttons are disabled so the reader
   // cannot lose all physical page-turn buttons.
-  bool frontLeftRightOpensFootnotes() const {
-    return !BoardConfig::hasTouch() && frontLeftRightBehavior == FRONT_LR_FOOTNOTES &&
-           sideButtonLayout != SIDE_BUTTONS_DISABLED;
+  FRONT_LR_BEHAVIOR effectiveFrontLeftRightBehavior() const {
+    if (BoardConfig::hasTouch() || sideButtonLayout == SIDE_BUTTONS_DISABLED) {
+      return FRONT_LR_PAGE_TURN;
+    }
+    switch (frontLeftRightBehavior) {
+      case FRONT_LR_PAGE_TURN:
+      case FRONT_LR_FOOTNOTES:
+      case FRONT_LR_CHAPTER_BOOK:
+        return static_cast<FRONT_LR_BEHAVIOR>(frontLeftRightBehavior);
+      default:
+        return FRONT_LR_PAGE_TURN;
+    }
   }
   int getReaderFontId() const;
 

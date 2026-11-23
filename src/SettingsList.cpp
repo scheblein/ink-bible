@@ -163,8 +163,8 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
                            StrId::STR_CAT_CONTROLS));
   if (!BoardConfig::hasTouch()) {
     emit(SettingInfo::Enum(StrId::STR_FRONT_LR_BEHAVIOR, &CrossPointSettings::frontLeftRightBehavior,
-                           {StrId::STR_FRONT_LR_PAGE_TURN, StrId::STR_FOOTNOTES}, "frontLeftRightBehavior",
-                           StrId::STR_CAT_CONTROLS));
+                           {StrId::STR_FRONT_LR_PAGE_TURN, StrId::STR_FOOTNOTES, StrId::STR_FRONT_LR_CHAPTER_BOOK},
+                           "frontLeftRightBehavior", StrId::STR_CAT_CONTROLS));
     emit(SettingInfo::Toggle(StrId::STR_FRONT_BTN_FOLLOW_ORIENTATION, &CrossPointSettings::frontButtonFollowOrientation,
                              "frontButtonFollowOrientation", StrId::STR_CAT_CONTROLS));
   }

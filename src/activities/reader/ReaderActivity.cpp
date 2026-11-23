@@ -182,7 +182,7 @@ bool ReaderActivity::handleEndOfBookMenu(const bool suppressConfirmRelease) {
       activityManager.goToReader(openPath);
       return true;
     case EndOfBookOptions::Action::GoHome:
-      onGoHome();
+      activityManager.goToFileBrowser(bookPath.c_str());
       return true;
     case EndOfBookOptions::Action::LastPage:
       onReturnFromEndOfBook();

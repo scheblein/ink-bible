@@ -907,8 +907,6 @@
   </div>
 </div>
 
-<div id="plugin-container"></div>
-
 </main>
 <!--#include file="shared/Footer.html.inc" -->
 
@@ -1210,14 +1208,13 @@
   </div>
 </dialog>
 
-<script src="/js/plugin-host.js"></script>
 <script>
   // get current path from query parameter
   const currentPath = decodeURIComponent(new URLSearchParams(window.location.search).get('path') || '/');
 
   if (currentPath !== '/') {
     const leaf = currentPath.split('/').filter(Boolean).pop();
-    if (leaf) document.title = leaf + ' - Files - CrossPoint Reader';
+    if (leaf) document.title = leaf + ' - Files - Ink Bible';
   }
 
   // Network status monitoring
@@ -1312,13 +1309,8 @@
   }
 
   async function hydrate() {
-    // Fetch CrossPoint version
+    // Fetch firmware version
     fetchVersion();
-
-    // Load any SD-hosted plugins that mount on the File Manager page.
-    // File Manager plugins may use the page's JSZip (docs/sd-plugins.md).
-    // The host is a separate request; if it failed, the file list still loads.
-    if (typeof loadPlugins === 'function') loadPlugins('files', ensureJszip);
 
     // Keep upload cleanup rules when a dialog is cancelled or its backdrop is clicked.
     const closeModal = {
@@ -3176,7 +3168,7 @@ function exportLogToFile(filename = null, isBatch = false) {
   }
   // Extract text from log entries
   const entries = logContainer.querySelectorAll('.log-entry');
-  let logText = `CrossPoint Reader ${crosspointVersion} - EPUB Conversion Log\n`;
+  let logText = `Ink Bible ${crosspointVersion} - EPUB Conversion Log\n`;
   logText += `Generated: ${new Date().toLocaleString()}\n`;
   logText += `${'='.repeat(60)}\n\n`;
 

@@ -16,7 +16,7 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
     2. **Select Chapter** (`1 .. N`)
     3. **Select Verse** (`1 .. M`) — jumps directly to the exact page containing that verse.
   - Pressing **Back** inside the picker steps back (`Verse → Chapter → Book → Reading Page`).
-- **Inline Translator & Study Footnotes**: USFM footnotes (`[1]`, `[2]`, ...) are linked in the text. On X3/X4, front **Left / Right** open inline footnote selection on the current page by default (configurable in **Settings → Controls → Left / Right buttons**, automatically falling back to page turns if side buttons are disabled); pressing **Back** returns to your verse. Also accessible via **Reader Menu → Links and Footnotes**.
+- **Inline Translator & Study Footnotes**: EPUB footnotes (`[1]`, `[2]`, ...) are supported via **Reader Menu → Links and Footnotes** (or by setting front **Left / Right** to `Links and Footnotes` in **Settings → Controls → Left / Right buttons**); pressing **Back** returns to your verse.
 - **Bookmarks, Highlights & Clippings**: Hold **Back** to toggle a bookmark on the current page, short-press **Back** to open your Bookmarks list and hop between passages, or select and save verse ranges as highlighted clippings (exported to `/My Clippings.txt` on the SD card).
 - **Clean Typography & Layout**:
   - Poetry indentation, Psalm superscriptions, section headings, small-caps divine name (`LORD`), and italics.
@@ -37,14 +37,14 @@ The complete **66-book, 1,189-chapter, 31,102-verse NET Bible** is compiled dire
 | Action | Button / Gesture |
 | --- | --- |
 | **Next / Previous Page** | Down / Up side buttons (or Front Right / Left if set to Page turn) |
-| **Select Footnotes on Page** | Front Left / Right (default; configurable in Controls) |
-| **Next / Previous Chapter** | Long-press Next / Previous Page |
+| **Next / Previous Chapter** | Short-press Front Right / Left (or long-press Side Down / Up) |
+| **Next / Previous Book** | Long-press Front Right / Left |
 | **Go to Passage (`Book → Chapter → Verse`)** | Short-press **Confirm** (or Reader Menu → **Go to Passage**) |
 | **Reader Menu** | Long-press **Confirm** |
 | **Bookmarks (Hop Between Passages)** | Short-press **Back** (or Reader Menu → **Bookmarks**) |
 | **Toggle Bookmark** | Long-press **Back** (or Reader Menu → **Toggle Bookmark**) |
 | **Switch Bible (SD File Browser)** | Reader Menu → **Switch Bible** (or hold **Back** during power-on boot) |
-| **Return from Footnote** | Short-press **Back** while viewing a footnote |
+| **Footnotes (on Bibles with notes)** | Reader Menu → **Links and Footnotes** (or set Front Left / Right to Links and Footnotes in Controls); short-press **Back** to return |
 | **Sleep / Wake** | Long-press **Power** |
 
 ---

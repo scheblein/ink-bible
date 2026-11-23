@@ -20,6 +20,7 @@ struct GuidePage {
 };
 
 constexpr GuidePage WELCOME_PAGE = {StrId::STR_WELCOME_TITLE, StrId::STR_GUIDE_WELCOME_BODY};
+constexpr GuidePage WELCOME_PAGE_TOUCH = {StrId::STR_WELCOME_TITLE, StrId::STR_GUIDE_WELCOME_TOUCH_BODY};
 
 constexpr GuidePage GUIDE_PAGES[] = {
     {StrId::STR_GUIDE_PAGE_CONTROLS, StrId::STR_GUIDE_CONTROLS_BODY},
@@ -28,7 +29,16 @@ constexpr GuidePage GUIDE_PAGES[] = {
     {StrId::STR_GUIDE_PAGE_TIPS, StrId::STR_GUIDE_TIPS_BODY},
 };
 
+constexpr GuidePage GUIDE_PAGES_TOUCH[] = {
+    {StrId::STR_GUIDE_PAGE_CONTROLS, StrId::STR_GUIDE_CONTROLS_TOUCH_BODY},
+    {StrId::STR_GUIDE_PAGE_FOOTNOTES, StrId::STR_GUIDE_FOOTNOTES_TOUCH_BODY},
+    {StrId::STR_GUIDE_PAGE_CLIPPINGS, StrId::STR_GUIDE_CLIPPINGS_TOUCH_BODY},
+    {StrId::STR_GUIDE_PAGE_TIPS, StrId::STR_GUIDE_TIPS_TOUCH_BODY},
+};
+
 constexpr int GUIDE_PAGE_COUNT = static_cast<int>(sizeof(GUIDE_PAGES) / sizeof(GUIDE_PAGES[0]));
+static_assert(sizeof(GUIDE_PAGES_TOUCH) / sizeof(GUIDE_PAGES_TOUCH[0]) == GUIDE_PAGE_COUNT,
+              "GUIDE_PAGES_TOUCH must have the same number of pages as GUIDE_PAGES");
 
 // Returns the length of a short leading "Label:" prefix on a paragraph, or 0.
 size_t findBoldPrefixLen(const char* p, size_t len) {
@@ -94,12 +104,14 @@ void UserGuideActivity::loop() {
   bool next = mappedInput.wasReleased(MappedInputManager::Button::ScreenRight) ||
               mappedInput.wasReleased(MappedInputManager::Button::ScreenDown);
 
+  bool touchAdvance = false;
   if (!prev && !next && mappedInput.hasTouch()) {
     const auto swipe = mappedInput.wasSwipe();
     if (swipe == MappedInputManager::SwipeDir::Right) {
       prev = true;
     } else if (swipe == MappedInputManager::SwipeDir::Left) {
       next = true;
+      touchAdvance = true;
     } else {
       int touchX = 0;
       int touchY = 0;
@@ -112,6 +124,7 @@ void UserGuideActivity::loop() {
             prev = true;
           } else {
             next = true;
+            touchAdvance = true;
           }
         }
       }
@@ -124,6 +137,8 @@ void UserGuideActivity::loop() {
   } else if (next && currentPage + 1 < total) {
     currentPage++;
     requestUpdate();
+  } else if (touchAdvance && currentPage + 1 >= total) {
+    dismiss();
   }
 }
 
@@ -235,9 +250,10 @@ void UserGuideActivity::render(RenderLock&&) {
   renderer.clearScreen();
 
   const int total = pageCount();
+  const bool touch = mappedInput.hasTouch();
   const GuidePage& page = (welcomeMode && currentPage == 0)
-                              ? WELCOME_PAGE
-                              : GUIDE_PAGES[welcomeMode ? (currentPage - 1) : currentPage];
+                              ? (touch ? WELCOME_PAGE_TOUCH : WELCOME_PAGE)
+                              : (touch ? GUIDE_PAGES_TOUCH : GUIDE_PAGES)[welcomeMode ? (currentPage - 1) : currentPage];
 
   const auto& metrics = UITheme::getInstance().getMetrics();
   const Rect headerRect = UITheme::getInstance().getHeaderRect(renderer, true, false);

@@ -4,8 +4,9 @@ Open **Settings → Controls** to configure buttons and touch input. The availab
 options depend on the device.
 
 - **Left / Right buttons** (non-touch devices): sets front Left / Right to
-  `Links and Footnotes` (default) or `Page turn`. Automatically falls back to
-  page turns if side buttons are disabled.
+  `Chapter / Book` (default: short press skips chapters, long press skips books),
+  `Page turn`, or `Links and Footnotes`. Automatically falls back to page turns
+  if side buttons are disabled.
 - **Front button follow orientation** & **Remap front buttons** (non-touch
   devices): rotate or remap front button assignments.
 - **Side button layout** & **Long-press behavior**: choose page-turn direction

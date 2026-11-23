@@ -946,26 +946,52 @@ void EpubReaderActivity::loop() {
     return;
   }
 
-  const bool frontFootnotes = SETTINGS.frontLeftRightOpensFootnotes();
+  const auto frontBehavior = SETTINGS.effectiveFrontLeftRightBehavior();
   const bool remoteClick = mappedInput.hasRemoteClick();
-  if (frontFootnotes && !remoteClick && !endOfBookMenuOpen && !atEndOfBook) {
+  const bool frontButtonsTurnPages = (frontBehavior == CrossPointSettings::FRONT_LR_PAGE_TURN) || remoteClick;
+  if (!frontButtonsTurnPages && !endOfBookMenuOpen && !atEndOfBook) {
     const auto frontButtons = ReaderUtils::getFrontPageTurnButtons(mappedInput);
-    const bool prevFoot = mappedInput.wasReleased(frontButtons.previous);
-    const bool nextFoot = mappedInput.wasReleased(frontButtons.next);
-    if (prevFoot || nextFoot) {
-      if (currentPageFootnotes.empty()) {
-        showFootnoteMessage = true;
-        footnoteMessageTime = millis();
-        requestUpdate();
-      } else {
-        openFootnoteSelect(/*reopenMenuOnCancel=*/false, /*startAtLast=*/prevFoot, /*autoJumpSingle=*/false);
+    switch (frontBehavior) {
+      case CrossPointSettings::FRONT_LR_FOOTNOTES: {
+        const bool prevFoot = mappedInput.wasReleased(frontButtons.previous);
+        const bool nextFoot = mappedInput.wasReleased(frontButtons.next);
+        if (prevFoot || nextFoot) {
+          if (currentPageFootnotes.empty()) {
+            showFootnoteMessage = true;
+            footnoteMessageTime = millis();
+            requestUpdate();
+          } else {
+            openFootnoteSelect(/*reopenMenuOnCancel=*/false, /*startAtLast=*/prevFoot, /*autoJumpSingle=*/false);
+          }
+          return;
+        }
+        break;
       }
-      return;
+      case CrossPointSettings::FRONT_LR_CHAPTER_BOOK: {
+        const bool prevBook = mappedInput.wasLongPressed(frontButtons.previous, ReaderUtils::SKIP_HOLD_MS);
+        const bool nextBook = mappedInput.wasLongPressed(frontButtons.next, ReaderUtils::SKIP_HOLD_MS);
+        if (prevBook || nextBook) {
+          const bool succeeded = skipBook(nextBook ? 1 : -1);
+          notePageTurn(false, succeeded);
+          if (succeeded) requestUpdate();
+          return;
+        }
+        const bool prevChapter = mappedInput.wasReleased(frontButtons.previous);
+        const bool nextChapter = mappedInput.wasReleased(frontButtons.next);
+        if (prevChapter || nextChapter) {
+          const bool succeeded = skipPages(nextChapter ? 1 : -1);
+          notePageTurn(false, succeeded);
+          if (succeeded) requestUpdate();
+          return;
+        }
+        break;
+      }
+      case CrossPointSettings::FRONT_LR_PAGE_TURN:
+        break;
     }
   }
 
-  auto [prevTriggered, nextTriggered, fromTilt] =
-      ReaderUtils::detectPageTurn(mappedInput, !frontFootnotes || remoteClick);
+  auto [prevTriggered, nextTriggered, fromTilt] = ReaderUtils::detectPageTurn(mappedInput, frontButtonsTurnPages);
   prevTriggered = prevTriggered || touch.prev;
   nextTriggered = nextTriggered || touch.next;
   if (!prevTriggered && !nextTriggered) {
@@ -1404,6 +1430,32 @@ bool EpubReaderActivity::skipPages(int amount) {
     }
   }
   return false;
+}
+
+bool EpubReaderActivity::skipBook(int delta) {
+  if (!epub || !section || delta == 0) return false;
+  if (epub->getSpineItemsCount() != BibleCanon::TOTAL_CHAPTER_COUNT) {
+    return skipPages(delta);
+  }
+
+  int bookIndex = 0;
+  int chapterNumber = 1;
+  BibleCanon::resolveSpineIndex(currentSpineIndex, bookIndex, chapterNumber);
+  const int targetBook = bookIndex + (delta > 0 ? 1 : -1);
+  if (targetBook < 0 || targetBook >= BibleCanon::BOOK_COUNT) {
+    return false;
+  }
+
+  const int targetSpine = static_cast<int>(BibleCanon::BOOKS[targetBook].chapterOffset);
+  bleturner::acknowledgeLinkNote();
+  {
+    RenderLock lock;
+    clearDeferredReposition();
+    nextPageNumber = 0;
+    currentSpineIndex = targetSpine;
+    section.reset();
+  }
+  return true;
 }
 
 // Failed protected open: show the standard option dialog (wrapped message)
